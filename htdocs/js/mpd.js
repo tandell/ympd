@@ -755,12 +755,7 @@ function setLocalStream(mpdhost) {
     var mpdstream = $.cookie("mpdstream");
 
     if ( !mpdstream ) {
-        mpdstream = "http://";
-        if ( mpdhost == "127.0.0.1" )
-            mpdstream += window.location.hostname;
-        else
-            mpdstream += mpdhost;
-        mpdstream += ":8000/";
+        mpdstream = "http://" + window.location.hostname + ":8000/";
 
         $.cookie("mpdstream", mpdstream, { expires: 424242 });
     }
