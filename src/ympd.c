@@ -38,8 +38,6 @@ void bye()
     force_exit = 1;
 }
 
-char *gpass = NULL;
-
 static int server_callback(struct mg_connection *c, enum mg_event ev) {
     int result = MG_FALSE;
     FILE *fp = NULL;
@@ -63,10 +61,10 @@ static int server_callback(struct mg_connection *c, enum mg_event ev) {
 #endif
         case MG_AUTH:
             // no auth for websockets since mobile safari does not support it
-            if ( (gpass == NULL) || (c->is_websocket) )
+            if ( (mpd.gpass == NULL) || (c->is_websocket) || ((mpd.local_port > 0) && (c->local_port == mpd.local_port)) )
                 return MG_TRUE;
             else {
-                if ( (fp = fopen(gpass, "r")) != NULL ) {
+                if ( (fp = fopen(mpd.gpass, "r")) != NULL ) {
                     result = mg_authorize_digest(c, fp);
                     fclose(fp);
                 }
@@ -93,24 +91,29 @@ int main(int argc, char **argv)
 
     mg_set_option(server, "auth_domain", "ympd");
     mpd.port = 6600;
+    mpd.local_port = 0;
+	mpd.gpass = NULL;
     strcpy(mpd.host, "127.0.0.1");
 
     static struct option long_options[] = {
-        {"digest",       required_argument, 0, 'd'},
+        {"digest",       required_argument, 0, 'D'},
         {"host",         required_argument, 0, 'h'},
         {"port",         required_argument, 0, 'p'},
+        {"localport",    required_argument, 0, 'l'},
         {"webport",      required_argument, 0, 'w'},
+        {"dirbletoken",  required_argument, 0, 'd'},
         {"user",         required_argument, 0, 'u'},
         {"version",      no_argument,       0, 'v'},
         {"help",         no_argument,       0,  0 },
+        {"mpdpass",      required_argument, 0, 'm'},
         {0,              0,                 0,  0 }
     };
 
-    while((n = getopt_long(argc, argv, "d:h:p:w:u:v",
+    while((n = getopt_long(argc, argv, "D:h:p:l:w:u:d:v:m",
                 long_options, &option_index)) != -1) {
         switch (n) {
-            case 'd':
-                gpass = strdup(optarg);
+            case 'D':
+                mpd.gpass = strdup(optarg);
                 break;
             case 'h':
                 strncpy(mpd.host, optarg, sizeof(mpd.host));
@@ -118,11 +121,21 @@ int main(int argc, char **argv)
             case 'p':
                 mpd.port = atoi(optarg);
                 break;
+            case 'l':
+                mpd.local_port = atoi(optarg);
+                break;
             case 'w':
                 webport = strdup(optarg);
                 break;
+            case 'd':
+                strncpy(dirble_api_token, optarg, sizeof(dirble_api_token));
+                break;
             case 'u':
                 run_as_user = strdup(optarg);
+                break;
+            case 'm':
+                if (strlen(optarg) > 0)
+                    mpd.password = strdup(optarg);
                 break;
             case 'v':
                 fprintf(stdout, "ympd  %d.%d.%d\n"
@@ -133,13 +146,16 @@ int main(int argc, char **argv)
                 break;
             default:
                 fprintf(stderr, "Usage: %s [OPTION]...\n\n"
-                        " -d, --digest <htdigest>\tpath to htdigest file for authorization\n"
+                        " -D, --digest <htdigest>\tpath to htdigest file for authorization\n"
                         "                        \t(realm ympd) [no authorization]\n"
                         " -h, --host <host>\t\tconnect to mpd at host [localhost]\n"
                         " -p, --port <port>\t\tconnect to mpd at port [6600]\n"
+                        " -l, --localport <port>\t\tskip authorization for local port\n"
                         " -w, --webport [ip:]<port>\tlisten interface/port for webserver [8080]\n"
                         " -u, --user <username>\t\tdrop priviliges to user after socket bind\n"
+                        " -d, --dirbletoken <apitoken>\tDirble API token\n"
                         " -v, --version\t\t\tget version\n"
+                        " -m, --mpdpass <password>\tspecifies the password to use when connecting to mpd\n"
                         " --help\t\t\t\tthis help\n"
                         , argv[0]);
                 return EXIT_FAILURE;

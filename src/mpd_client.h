@@ -40,6 +40,7 @@
     X(MPD_API_GET_QUEUE) \
     X(MPD_API_GET_BROWSE) \
     X(MPD_API_GET_MPDHOST) \
+    X(MPD_API_GET_DIRBLEAPITOKEN) \
     X(MPD_API_ADD_TRACK) \
     X(MPD_API_ADD_PLAY_TRACK) \
     X(MPD_API_ADD_PLAYLIST) \
@@ -83,8 +84,10 @@ enum mpd_conn_states {
 
 struct t_mpd {
     int port;
+	int local_port;
     char host[128];
     char *password;
+	char *gpass;
 
     struct mpd_connection *conn;
     enum mpd_conn_states conn_state;
@@ -96,6 +99,8 @@ struct t_mpd {
     int song_id;
     unsigned queue_version;
 } mpd;
+
+char dirble_api_token[28];
 
 struct t_mpd_client_session {
     int song_id;
