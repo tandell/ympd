@@ -78,12 +78,11 @@ var app = $.sammy(function() {
         socket.send('MPD_API_GET_BROWSE,'+pagination+','+(browsepath ? browsepath : "/"));
         // Don't add all songs from root
         if (browsepath) {
+            $('#filter').append('<button id="add-all-songs" class="btn btn-primary pull-right">Add all</button>');
             var add_all_songs = $('#add-all-songs');
-            add_all_songs.off(); // remove previous binds
             add_all_songs.on('click', function() {
                 socket.send('MPD_API_ADD_TRACK,'+browsepath);
             });
-            add_all_songs.show();
         }
 
         $('#panel-heading').text("Browse database: "+browsepath);
