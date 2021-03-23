@@ -199,6 +199,9 @@ $(document).ready(function(){
         if ($.cookie("notification") === "true")
             $('#btnnotify').addClass("active")
 
+    if ($.cookie("autoplay") === "true")
+        $('#btnautoplay').addClass("active")
+
     document.getElementById('player').addEventListener('stalled', function() {
 						if ( !document.getElementById('player').paused ) {
 							this.pause();
@@ -765,6 +768,9 @@ var updatePlayIcon = function(state)
     } else if(state == 2) { // play
         $("#play-icon").addClass("glyphicon-pause");
         $('#track-icon').addClass("glyphicon-play");
+        if ( ($.cookie("autoplay") === "true") && (player.paused) ) {
+			clickLocalPlay();
+		}
     } else { // pause
         $("#play-icon").addClass("glyphicon-play");
         $('#track-icon').addClass("glyphicon-pause");
@@ -922,6 +928,15 @@ $('#btnnotify').on('click', function (e) {
                 $('btnnotify').addClass("active");
             }
         });
+    }
+});
+
+$('#btnautoplay').on('click', function (e) {
+    if($.cookie("autoplay") === "true") {
+        $.cookie("autoplay", false);
+    } else {
+        $.cookie("autoplay", true, { expires: 424242 });
+        $('#btnautoplay').addClass("active");
     }
 });
 
