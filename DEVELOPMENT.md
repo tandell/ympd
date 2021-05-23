@@ -10,4 +10,23 @@ Manual Usage:
 > npx prettier --write .
 ```
 
-The C source and header files have been formatted with `clang-format`.
+The C source and header files have been formatted with `clang-format`. There's no easy way to manually execute the formatter on all of the C files at the same time. The clang format is based off of the 'Google' style with ajdustments to make the changes not as disruptive. See [.clang-format](./.clang-format) file for the formatting rules. Various editors should be able to automatically format the source on save.
+
+The only files formatted are the non-third party library files.
+
+Manual Usage:
+
+```bash
+> clang-format -i -style=file <filename>
+```
+
+Manually formatted files:
+
+-   http_server.c
+-   http_server.h
+-   json_encode.h
+-   mpd_client.c
+-   mpd_client.h
+-   ympd.c
+
+For help with the rules, see [Clang Format Configurator](https://zed0.co.uk/clang-format-configurator/) for an interactive tool and [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html) for the rules reference.

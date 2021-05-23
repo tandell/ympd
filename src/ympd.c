@@ -1,7 +1,7 @@
 /* ympd
    (c) 2013-2014 Andrew Karpow <andy@ndyk.de>
    This project's homepage is: http://www.ympd.org
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; version 2 of the License.
@@ -16,25 +16,24 @@
    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include <getopt.h>
+#include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <sys/time.h>
-#include <pthread.h>
+#include <unistd.h>
 
-#include "mongoose.h"
-#include "http_server.h"
-#include "mpd_client.h"
 #include "config.h"
+#include "http_server.h"
+#include "mongoose.h"
+#include "mpd_client.h"
 
 extern char *optarg;
 
 int force_exit = 0;
 
-void bye()
-{
+void bye() {
     force_exit = 1;
 }
 
@@ -42,14 +41,14 @@ static int server_callback(struct mg_connection *c, enum mg_event ev) {
     int result = MG_FALSE;
     FILE *fp = NULL;
 
-    switch(ev) {
+    switch (ev) {
         case MG_CLOSE:
             mpd_close_handler(c);
             return MG_TRUE;
         case MG_REQUEST:
             if (c->is_websocket) {
                 c->content[c->content_len] = '\0';
-                if(c->content_len)
+                if (c->content_len)
                     return callback_mpd(c);
                 else
                     return MG_TRUE;
@@ -61,10 +60,11 @@ static int server_callback(struct mg_connection *c, enum mg_event ev) {
 #endif
         case MG_AUTH:
             // no auth for websockets since mobile safari does not support it
-            if ( (mpd.gpass == NULL) || (c->is_websocket) || ((mpd.local_port > 0) && (c->local_port == mpd.local_port)) )
+            if ((mpd.gpass == NULL) || (c->is_websocket) ||
+                ((mpd.local_port > 0) && (c->local_port == mpd.local_port)))
                 return MG_TRUE;
             else {
-                if ( (fp = fopen(mpd.gpass, "r")) != NULL ) {
+                if ((fp = fopen(mpd.gpass, "r")) != NULL) {
                     result = mg_authorize_digest(c, fp);
                     fclose(fp);
                 }
@@ -75,8 +75,7 @@ static int server_callback(struct mg_connection *c, enum mg_event ev) {
     }
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     int n, option_index = 0;
     struct mg_server *server = mg_create_server(NULL, server_callback);
     unsigned int current_timer = 0, last_timer = 0;
@@ -92,9 +91,10 @@ int main(int argc, char **argv)
     mg_set_option(server, "auth_domain", "ympd");
     mpd.port = 6600;
     mpd.local_port = 0;
-	mpd.gpass = NULL;
+    mpd.gpass = NULL;
     strcpy(mpd.host, "127.0.0.1");
 
+    /* clang-format off */
     static struct option long_options[] = {
         {"digest",       required_argument, 0, 'D'},
         {"host",         required_argument, 0, 'h'},
@@ -107,9 +107,9 @@ int main(int argc, char **argv)
         {"mpdpass",      required_argument, 0, 'm'},
         {0,              0,                 0,  0 }
     };
+    /* clang-format on */
 
-    while((n = getopt_long(argc, argv, "D:h:p:l:w:u:d:v:m",
-                long_options, &option_index)) != -1) {
+    while ((n = getopt_long(argc, argv, "D:h:p:l:w:u:d:v:m", long_options, &option_index)) != -1) {
         switch (n) {
             case 'D':
                 mpd.gpass = strdup(optarg);
@@ -134,14 +134,19 @@ int main(int argc, char **argv)
                     mpd.password = strdup(optarg);
                 break;
             case 'v':
-                fprintf(stdout, "ympd  %d.%d.%d\n"
+                fprintf(stdout,
+                        "ympd  %d.%d.%d\n"
                         "Copyright (C) 2014 Andrew Karpow <andy@ndyk.de>\n"
-                        "built " __DATE__ " "__TIME__ " ("__VERSION__")\n",
+                        "built " __DATE__
+                        " "__TIME__
+                        " ("__VERSION__
+                        ")\n",
                         YMPD_VERSION_MAJOR, YMPD_VERSION_MINOR, YMPD_VERSION_PATCH);
                 return EXIT_SUCCESS;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [OPTION]...\n\n"
+                fprintf(stderr,
+                        "Usage: %s [OPTION]...\n\n"
                         " -D, --digest <htdigest>\tpath to htdigest file for authorization\n"
                         "                        \t(realm ympd) [no authorization]\n"
                         " -h, --host <host>\t\tconnect to mpd at host [localhost]\n"
@@ -150,31 +155,30 @@ int main(int argc, char **argv)
                         " -w, --webport [ip:]<port>\tlisten interface/port for webserver [8080]\n"
                         " -u, --user <username>\t\tdrop priviliges to user after socket bind\n"
                         " -v, --version\t\t\tget version\n"
-                        " -m, --mpdpass <password>\tspecifies the password to use when connecting to mpd\n"
-                        " --help\t\t\t\tthis help\n"
-                        , argv[0]);
+                        " -m, --mpdpass <password>\tspecifies the password to use when connecting "
+                        "to mpd\n"
+                        " --help\t\t\t\tthis help\n",
+                        argv[0]);
                 return EXIT_FAILURE;
         }
 
-        if(error_msg)
-        {
+        if (error_msg) {
             fprintf(stderr, "Mongoose error: %s\n", error_msg);
             return EXIT_FAILURE;
         }
     }
 
     error_msg = mg_set_option(server, "listening_port", webport);
-    if(error_msg) {
+    if (error_msg) {
         fprintf(stderr, "Mongoose error: %s\n", error_msg);
         return EXIT_FAILURE;
     }
 
     /* drop privilges at last to ensure proper port binding */
-    if(run_as_user != NULL) {
+    if (run_as_user != NULL) {
         error_msg = mg_set_option(server, "run_as_user", run_as_user);
         free(run_as_user);
-        if(error_msg)
-        {
+        if (error_msg) {
             fprintf(stderr, "Mongoose error: %s\n", error_msg);
             return EXIT_FAILURE;
         }
@@ -183,8 +187,7 @@ int main(int argc, char **argv)
     while (!force_exit) {
         mg_poll_server(server, 200);
         current_timer = time(NULL);
-        if(current_timer - last_timer)
-        {
+        if (current_timer - last_timer) {
             last_timer = current_timer;
             mpd_poll(server);
         }

@@ -1,7 +1,7 @@
 /* ympd
    (c) 2013-2014 Andrew Karpow <andy@ndyk.de>
    This project's homepage is: http://www.ympd.org
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; version 2 of the License.
@@ -16,24 +16,22 @@
    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include <string.h>
-
 #include "http_server.h"
 
-int callback_http(struct mg_connection *c)
-{
+#include <string.h>
+
+int callback_http(struct mg_connection *c) {
     const struct embedded_file *req_file;
 
-    if(!strcmp(c->uri, "/"))
+    if (!strcmp(c->uri, "/"))
         req_file = find_embedded_file("/index.html");
     else
         req_file = find_embedded_file(c->uri);
 
-    if(req_file)
-    {
+    if (req_file) {
         mg_send_header(c, "Content-Type", req_file->mimetype);
         mg_send_data(c, req_file->data, req_file->size);
-    
+
         return MG_TRUE;
     }
 
