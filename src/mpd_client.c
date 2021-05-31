@@ -96,10 +96,9 @@ int callback_mpd(struct mg_connection *c) {
                 mpd_run_delete_range(mpd.conn, uint_buf, uint_buf_2);
             break;
         case MPD_API_MOVE_TRACK:
-            if (sscanf(c->content, "MPD_API_MOVE_TRACK,%u,%u", &uint_buf, &uint_buf_2) == 2) {
-                uint_buf -= 1;
-                uint_buf_2 -= 1;
-                mpd_run_move(mpd.conn, uint_buf, uint_buf_2);
+            if (sscanf(c->content, "MPD_API_MOVE_TRACK,%u,%u", &uint_buf, &uint_buf_2) == 2)
+            {
+                mpd_run_move_id(mpd.conn, uint_buf, uint_buf_2);
             }
             break;
         case MPD_API_PLAY_TRACK:

@@ -421,15 +421,25 @@ function webSocketConnect() {
                         return $helper;
                     };
 
-                    //Make queue table sortable
-                    $('#salamisandwich > tbody')
-                        .sortable({
+                    // Make queue table sortable; there appears to be an issue
+                    // in .sortable where if you click-and-drag elements too
+                    // quickly, you'll get errors like 'i.item[0].parentNode is
+                    // null'.
+                    try {
+                        $('#salamisandwich > tbody').sortable({
                             helper: fixHelperModified,
                             stop: function (event, ui) {
                                 renumber_table('#salamisandwich', ui.item);
                             },
-                        })
-                        .disableSelection();
+                        });
+                    } catch (e) {
+                        if (e instanceof TypeError) {
+                            console.debug('Sorting the queue too quickly', e);
+                        } else {
+                            throw e; // Rethrow if it's not the typeerror
+                        }
+                    }
+
                     break;
                 case 'search':
                     $('#wait').modal('hide');
@@ -1064,13 +1074,12 @@ function trash(tr) {
 }
 
 function renumber_table(tableID, item) {
-    was = item.children('td').first().text(); //Check if first item exists!
-    is = item.index() + 1; //maybe add pagination
+    // Where as item.index() is the location where it was dropped.
+    toLocation = item.index(); //maybe add pagination
+    trackid = item.get(0).getAttribute('trackid');
 
-    if (was != is) {
-        socket.send('MPD_API_MOVE_TRACK,' + was + ',' + is);
-        socket.send('MPD_API_GET_QUEUE,' + pagination);
-    }
+    socket.send('MPD_API_MOVE_TRACK,' + trackid + ',' + toLocation);
+    socket.send('MPD_API_GET_QUEUE,' + pagination);
 }
 
 function basename(path) {
