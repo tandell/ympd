@@ -30,6 +30,16 @@ var MAX_ELEMENTS_PER_PAGE = 512;
 var isTouch = Modernizr.touch ? 1 : 0;
 var filter = '';
 
+$.notifyDefaults({
+    placement: {
+        from: 'top',
+        align: 'right',
+    },
+    animate: {
+        exit: 'fadeOutUp',
+    },
+});
+
 var app = $.sammy(function () {
     function runBrowse() {
         current_app = 'queue';
@@ -156,15 +166,14 @@ $(document).ready(function () {
         if (!document.getElementById('player').paused) {
             this.pause();
             clickLocalPlay();
-            $('.top-right')
-                .notify({
-                    message: {
-                        text: 'music stream stalled - trying to recover...',
-                    },
+            $.notify(
+                {
+                    message: 'music stream stalled - trying to recover...',
+                },
+                {
                     type: 'danger',
-                    fadeOut: { enabled: true, delay: 1000 },
-                })
-                .show();
+                }
+            );
         }
     });
 
@@ -182,59 +191,56 @@ $(document).ready(function () {
             this.pause();
             switch (e.target.error.code) {
                 case e.target.error.MEDIA_ERR_ABORTED:
-                    $('.top-right')
-                        .notify({
-                            message: {
-                                text: 'Audio playback aborted by user.',
-                            },
+                    $.notify(
+                        {
+                            message: 'Audio playback aborted by user.',
+                        },
+                        {
                             type: 'info',
-                            fadeOut: { enabled: true, delay: 1000 },
-                        })
-                        .show();
+                        }
+                    );
                     break;
                 case e.target.error.MEDIA_ERR_NETWORK:
-                    $('.top-right')
-                        .notify({
-                            message: {
-                                text: 'Network error while playing audio.',
-                            },
+                    $.notify(
+                        {
+                            message: 'Network error while playing audio.',
+                        },
+                        {
                             type: 'danger',
-                            fadeOut: { enabled: true, delay: 1000 },
-                        })
-                        .show();
+                        }
+                    );
                     break;
                 case e.target.error.MEDIA_ERR_DECODE:
-                    $('.top-right')
-                        .notify({
-                            message: {
-                                text: 'Audio playback aborted. Did you unplug your headphones?',
-                            },
+                    $.notify(
+                        {
+                            message:
+                                'Audio playback aborted. Did you unplug your headphones?',
+                        },
+                        {
                             type: 'danger',
-                            fadeOut: { enabled: true, delay: 1000 },
-                        })
-                        .show();
+                        }
+                    );
                     break;
                 case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    $('.top-right')
-                        .notify({
-                            message: {
-                                text: 'Error while loading audio (server, network or format error).',
-                            },
+                    $.notify(
+                        {
+                            message:
+                                'Error while loading audio (server, network or format error).',
+                        },
+                        {
                             type: 'danger',
-                            fadeOut: { enabled: true, delay: 1000 },
-                        })
-                        .show();
+                        }
+                    );
                     break;
                 default:
-                    $('.top-right')
-                        .notify({
-                            message: {
-                                text: 'Unknown error while playing audio.',
-                            },
+                    $.notify(
+                        {
+                            message: 'Unknown error while playing audio.',
+                        },
+                        {
                             type: 'danger',
-                            fadeOut: { enabled: true, delay: 1000 },
-                        })
-                        .show();
+                        }
+                    );
                     break;
             }
         },
@@ -252,12 +258,12 @@ function webSocketConnect() {
     try {
         socket.onopen = function () {
             console.log('connected');
-            $('.top-right')
-                .notify({
-                    message: { text: 'Connected to ympd' },
-                    fadeOut: { enabled: true, delay: 500 },
-                })
-                .show();
+            $.notify(
+                {
+                    message: 'Connected to ympd',
+                },
+                {}
+            );
 
             app.run();
             /* emit initial request for output names */
@@ -581,21 +587,19 @@ function webSocketConnect() {
                                             $(this).parents('tr').attr('uri')
                                         )
                                 );
-                                $('.top-right')
-                                    .notify({
-                                        message: {
-                                            text:
-                                                '"' +
-                                                $(
-                                                    'td:nth-last-child(3)',
-                                                    $(this).parents('tr')
-                                                ).text() +
-                                                '" added',
-                                        },
-                                    })
-                                    .show();
-                            })
-                            .fadeTo('fast', 1);
+                                $.notify(
+                                    {
+                                        message:
+                                            '"' +
+                                            $(
+                                                'td:nth-last-child(3)',
+                                                $(this).parents('tr')
+                                            ).text() +
+                                            '" added',
+                                    },
+                                    {}
+                                );
+                            });
                     }
 
                     if (isTouch) {
@@ -672,38 +676,36 @@ function webSocketConnect() {
                                         'MPD_API_ADD_TRACK,' +
                                             decodeURI($(this).attr('uri'))
                                     );
-                                    $('.top-right')
-                                        .notify({
-                                            message: {
-                                                text:
-                                                    '"' +
-                                                    $(
-                                                        'td:nth-last-child(3)',
-                                                        this
-                                                    ).text() +
-                                                    '" added',
-                                            },
-                                        })
-                                        .show();
+                                    $.notify(
+                                        {
+                                            message:
+                                                '"' +
+                                                $(
+                                                    'td:nth-last-child(3)',
+                                                    this
+                                                ).text() +
+                                                '" added',
+                                        },
+                                        {}
+                                    );
                                     break;
                                 case 'plist':
                                     socket.send(
                                         'MPD_API_ADD_PLAYLIST,' +
                                             decodeURI($(this).attr('uri'))
                                     );
-                                    $('.top-right')
-                                        .notify({
-                                            message: {
-                                                text:
-                                                    '"' +
-                                                    $(
-                                                        'td:nth-last-child(3)',
-                                                        this
-                                                    ).text() +
-                                                    '" added',
-                                            },
-                                        })
-                                        .show();
+                                    $.notify(
+                                        {
+                                            message:
+                                                '"' +
+                                                $(
+                                                    'td:nth-last-child(3)',
+                                                    this
+                                                ).text() +
+                                                '" added',
+                                        },
+                                        {}
+                                    );
                                     break;
                             }
                         },
@@ -824,15 +826,14 @@ function webSocketConnect() {
                     break;
                 case 'disconnected':
                     if ($('.top-right').has('div').length == 0)
-                        $('.top-right')
-                            .notify({
-                                message: {
-                                    text: 'ympd lost connection to MPD ',
-                                },
+                        $.notify(
+                            {
+                                message: 'ympd lost connection to MPD ',
+                            },
+                            {
                                 type: 'danger',
-                                fadeOut: { enabled: true, delay: 1000 },
-                            })
-                            .show();
+                            }
+                        );
                     break;
                 case 'update_queue':
                     if (current_app === 'queue')
@@ -865,12 +866,14 @@ function webSocketConnect() {
                             obj.data.album
                         );
                     else
-                        $('.top-right')
-                            .notify({
-                                message: { html: notification },
+                        $.notify(
+                            {
+                                message: notification,
+                            },
+                            {
                                 type: 'info',
-                            })
-                            .show();
+                            }
+                        );
                     break;
                 case 'mpdhost':
                     $('#mpdhost').val(obj.data.host);
@@ -881,12 +884,14 @@ function webSocketConnect() {
                     break;
 
                 case 'error':
-                    $('.top-right')
-                        .notify({
-                            message: { text: obj.data },
+                    $.notify(
+                        {
+                            message: obj.data,
+                        },
+                        {
                             type: 'danger',
-                        })
-                        .show();
+                        }
+                    );
                 default:
                     break;
             }
@@ -894,17 +899,17 @@ function webSocketConnect() {
 
         socket.onclose = function () {
             console.log('disconnected');
-            $('.top-right')
-                .notify({
-                    message: {
-                        text: 'Connection to ympd lost, retrying in 3 seconds ',
-                    },
+            $.notify(
+                {
+                    message: 'Connection to ympd lost, retrying in 3 seconds ',
+                },
+                {
                     type: 'danger',
                     onClose: function () {
                         webSocketConnect();
                     },
-                })
-                .show();
+                }
+            );
         };
     } catch (exception) {
         alert('<p>Error' + exception);
@@ -999,11 +1004,12 @@ var updatePageTitle = function (songInfo) {
 
 function updateDB() {
     socket.send('MPD_API_UPDATE_DB');
-    $('.top-right')
-        .notify({
-            message: { text: 'Updating MPD Database... ' },
-        })
-        .show();
+    $.notify(
+        {
+            message: 'Updating MPD Database... ',
+        },
+        {}
+    );
 }
 
 function clickPlay() {
