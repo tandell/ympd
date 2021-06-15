@@ -1,0 +1,13 @@
+# Used by Prettier to ignore certain files and folders completely.
+# See https://prettier.io/docs/en/ignore.html for details.
+
+# Ignore build and system artifacts 
+build/
+cmake/
+contrib/
+
+# Ignore all 3rd party libraries
+**/bootstrap*
+**/jquery*
+**/modernizr*
+**/sammy*

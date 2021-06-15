@@ -15,11 +15,9 @@ body {
   margin-bottom: 0;
 }
 
-
 button {
   overflow: hidden;
 }
-
 
 #volume-icon {
   float: left;
@@ -34,7 +32,7 @@ button {
   white-space: nowrap;
 }
 
-#breadcrump > li > a{
+#breadcrump > li > a {
   cursor: pointer;
 }
 
@@ -58,17 +56,17 @@ button {
   background-image: none;
   outline: 0;
   -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-          box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
   color: #428bca;
   background-color: #fdfdfd;
   border-color: #adadad;
 }
 
 @media (max-width: 1199px) {
-#btn-responsive-block > .btn {
-  padding: 6px 12px;
-  font-size: 14px;
-  border-radius: 4px;
+  #btn-responsive-block > .btn {
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 4px;
   }
 }
 
@@ -80,14 +78,16 @@ h1 {
   white-space: nowrap;
 }
 
-td:nth-child(4), th:nth-child(4) {
+td:nth-child(4),
+th:nth-child(4) {
   /* This *has* to be placed before
      any t[dh]:nth-last-child(2) for
      the override to work. */
   min-width: 50%;
 }
 
-td:nth-last-child(2), th:nth-last-child(2) {
+td:nth-last-child(2),
+th:nth-last-child(2) {
   text-align: right;
   width: 4em;
 }
@@ -98,7 +98,8 @@ td:nth-last-child(2), th:nth-last-child(2) {
   display: block;
 }
 
-td:nth-child(2), td:nth-child(3) {
+td:nth-child(2),
+td:nth-child(3) {
   min-width: 25%;
   max-width: 10em;
 
@@ -108,21 +109,24 @@ td:nth-child(2), td:nth-child(3) {
 }
 
 @media only screen and (max-width: 600px) {
-	td:nth-child(2), td:nth-child(3) {
-	  min-width: 0;
-	  max-width: 0;
-	}
-	td:nth-child(4), th:nth-child(4) {
-	  min-width: 10%;
-	  white-space: normal;
-	}
+  td:nth-child(2),
+  td:nth-child(3) {
+    min-width: 0;
+    max-width: 0;
+  }
+  td:nth-child(4),
+  th:nth-child(4) {
+    min-width: 10%;
+    white-space: normal;
+  }
 }
 
 tbody {
   cursor: pointer;
 }
 
-td:last-child, td:first-child {
+td:last-child,
+td:first-child {
   width: 30px;
 }
 
@@ -149,9 +153,9 @@ button {
 }
 
 #trashmode span:last-child {
-  display:inline-block;
-  text-align:left;
-  width:2.8em;
+  display: inline-block;
+  text-align: left;
+  width: 2.8em;
 }
 
 #filter > a.active {

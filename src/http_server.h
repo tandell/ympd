@@ -1,7 +1,7 @@
 /* ympd
    (c) 2013-2014 Andrew Karpow <andy@ndyk.de>
    This project's homepage is: http://www.ympd.org
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; version 2 of the License.
@@ -22,14 +22,13 @@
 #include "mongoose.h"
 
 struct embedded_file {
-  const char *name;
-  const unsigned char *data;
-  const char *mimetype;
-  size_t size;
+    const char *name;
+    const unsigned char *data;
+    const char *mimetype;
+    size_t size;
 };
 
 const struct embedded_file *find_embedded_file(const char *name);
 int callback_http(struct mg_connection *c);
 
 #endif
-

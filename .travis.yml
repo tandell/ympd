@@ -3,16 +3,15 @@ language: c
 sudo: required
 dist: trusty
 
-compiler: 
-  - gcc
-  - clang
+compiler:
+    - gcc
+    - clang
 
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libmpdclient-dev cmake
-  - mkdir build
-  - cd build
-  - cmake -D CMAKE_BUILD_TYPE=DEBUG ..
+    - sudo apt-get -qq update
+    - sudo apt-get install -y libmpdclient-dev cmake
+    - mkdir build
+    - cd build
+    - cmake -D CMAKE_BUILD_TYPE=DEBUG ..
 
 script: make
-
