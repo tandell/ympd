@@ -184,6 +184,6 @@ button {
   .sticky {
     position: sticky;
     top: 55px;
-	z-index: 99;
+    z-index: 99;
   }
 }
