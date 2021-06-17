@@ -94,24 +94,6 @@
                 <span class="glyphicon glyphicon-forward"></span>
               </button>
             </div>
-            <div class="btn-group">
-              <button
-                id="btnlove"
-                type="button"
-                class="btn btn-default"
-                onclick="clickLove();"
-              >
-                <span class="glyphicon glyphicon-heart"></span>
-              </button>
-            </div>
-            <!--          
-          <div class="btn-group">
-            <div class="btn btn-toolbar btn-default">
-              <span id="volume-icon" class="glyphicon glyphicon-volume-up"></span>
-              <div id="volumeslider"></div>
-            </div>
-          </div>
--->
             <div class="btn-group" role="group">
               <button
                 type="button"
@@ -124,6 +106,16 @@
                   class="glyphicon glyphicon-play"
                 ></span>
               </button>
+            </div>
+            <div class="btn-group" role="group">
+              <div class="btn btn-toolbar btn-default">
+                <span
+                  id="volume-icon"
+                  class="glyphicon glyphicon-volume-up"
+                ></span>
+                <div id="volumeslider"></div>
+                <span id="volume-number"></span>
+              </div>
             </div>
           </div>
 
@@ -156,6 +148,15 @@
                   class="glyphicon glyphicon-play"
                 ></span>
                 <span id="currenttrack"></span>
+                <span id="love">
+                  <button
+                    id="btnlove"
+                    type="button"
+                    class="btn btn-default"
+                    onclick="clickLove();"
+                  >
+                    <span class="glyphicon glyphicon-heart"></span></button
+                ></span>
               </h1>
               <h4>
                 <span id="artist" class="text"></span>
