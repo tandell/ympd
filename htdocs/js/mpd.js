@@ -1085,6 +1085,10 @@ function clickLove() {
         'MPD_API_SEND_MESSAGE,mpdas,' +
             ($('#btnlove').hasClass('active') ? 'unlove' : 'love')
     );
+    socket.send(
+        'MPD_API_SEND_MESSAGE,mpdscribble,' +
+            ($('#btnlove').hasClass('active') ? 'unlove' : 'love')
+    );
     if ($('#btnlove').hasClass('active')) $('#btnlove').removeClass('active');
     else $('#btnlove').addClass('active');
 }
