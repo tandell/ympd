@@ -67,7 +67,9 @@ var app = $.sammy(function () {
         $('#breadcrump')
             .removeClass('hide')
             .empty()
-            .append('<li><a uri="" onclick="set_filter(\'\')">root</a></li>');
+            .append(
+                '<li><a uri="" onclick="set_filter(\'\')">Library</a></li>'
+            );
         add_filter();
         $('#salamisandwich').removeClass('hide').find('tr:gt(0)').remove();
         socket.send(
