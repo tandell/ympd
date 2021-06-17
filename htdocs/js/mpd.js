@@ -29,6 +29,7 @@ var current_song = new Object();
 var MAX_ELEMENTS_PER_PAGE = 512;
 var isTouch = Modernizr.touch ? 1 : 0;
 var filter = '';
+var scrobbler = '';
 
 var app = $.sammy(function () {
     function runBrowse() {
@@ -264,6 +265,7 @@ function webSocketConnect() {
             app.run();
             /* emit initial request for output names */
             socket.send('MPD_API_GET_OUTPUTS');
+            socket.send('MPD_API_GET_CHANNELS');
         };
 
         socket.onmessage = function got_packet(msg) {
@@ -815,6 +817,22 @@ function webSocketConnect() {
                     });
                     last_outputs = obj;
                     break;
+                case 'channels':
+                    scrobbler = '';
+                    $('#love').addClass('hide');
+                    if (Object.keys(obj.data).length) {
+                        $.each(obj.data, function (id, name) {
+                            switch (name) {
+                                case 'mpdas':
+                                case 'mpdscribble':
+                                    scrobbler = name;
+                                    $('#love').removeClass('hide');
+                                default:
+                                    break;
+                            }
+                        });
+                    }
+                    break;
                 case 'disconnected':
                     if ($('.top-right').has('div').length == 0)
                         $('.top-right')
@@ -1082,11 +1100,9 @@ function basename(path) {
 
 function clickLove() {
     socket.send(
-        'MPD_API_SEND_MESSAGE,mpdas,' +
-            ($('#btnlove').hasClass('active') ? 'unlove' : 'love')
-    );
-    socket.send(
-        'MPD_API_SEND_MESSAGE,mpdscribble,' +
+        'MPD_API_SEND_MESSAGE,' +
+            scrobbler +
+            ',' +
             ($('#btnlove').hasClass('active') ? 'unlove' : 'love')
     );
     if ($('#btnlove').hasClass('active')) $('#btnlove').removeClass('active');

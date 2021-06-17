@@ -259,6 +259,11 @@ int callback_mpd(struct mg_connection *c) {
         out_send_message:
             free(p_charbuf);
             break;
+        case MPD_API_GET_CHANNELS:
+            mpd.buf_size = mpd_put_channels(mpd.buf);
+            c->callback_param = NULL;
+            mpd_notify_callback(c, MG_POLL);
+            break;
 #ifdef WITH_MPD_HOST_CHANGE
         /* Commands allowed when disconnected from MPD server */
         case MPD_API_SET_MPDHOST:
@@ -540,6 +545,32 @@ int mpd_put_outputs(char *buffer, int names) {
             str += snprintf(str, strend - str, " \"%d\":%d", mpd_output_get_id(out),
                             mpd_output_get_enabled(out));
         mpd_output_free(out);
+    }
+    if (!mpd_response_finish(mpd.conn)) {
+        fprintf(stderr, "MPD outputs: %s\n", mpd_connection_get_error_message(mpd.conn));
+        mpd_connection_clear_error(mpd.conn);
+        return 0;
+    }
+    str += snprintf(str, strend - str, " }}");
+    return str - buffer;
+}
+
+int mpd_put_channels(char *buffer) {
+    struct mpd_pair *channel;
+    int nchan;
+    char *str, *strend;
+
+    str = buffer;
+    strend = buffer + MAX_SIZE;
+    str += snprintf(str, strend - str, "{\"type\":\"%s\", \"data\":{", "channels");
+
+    mpd_send_channels(mpd.conn);
+    nchan = 0;
+    while ((channel = mpd_recv_channel_pair(mpd.conn)) != NULL) {
+        if (nchan++)
+            *str++ = ',';
+        str += snprintf(str, strend - str, " \"%d\":\"%s\"", nchan, channel->value);
+        mpd_return_pair(mpd.conn, channel);
     }
     if (!mpd_response_finish(mpd.conn)) {
         fprintf(stderr, "MPD outputs: %s\n", mpd_connection_get_error_message(mpd.conn));
