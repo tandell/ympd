@@ -27,7 +27,6 @@ button {
 
 #breadcrump {
   display: block;
-
   overflow: auto;
   white-space: nowrap;
 }
@@ -164,4 +163,9 @@ button {
   cursor: default;
   text-decoration: none;
   color: black;
+}
+
+.sticky {
+  position: sticky;
+  top: 55px;
 }
