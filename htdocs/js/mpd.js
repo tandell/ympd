@@ -952,11 +952,14 @@ function get_appropriate_ws_url() {
 }
 
 var updateVolumeIcon = function (volume) {
+    $('#volume-group').removeClass('hide');
     $('#volume-icon').removeClass('glyphicon-volume-off');
     $('#volume-icon').removeClass('glyphicon-volume-up');
     $('#volume-icon').removeClass('glyphicon-volume-down');
 
-    if (volume == 0) {
+    if (volume == -1) {
+        $('#volume-group').addClass('hide');
+    } else if (volume == 0) {
         $('#volume-icon').addClass('glyphicon-volume-off');
     } else if (volume < 50) {
         $('#volume-icon').addClass('glyphicon-volume-down');
