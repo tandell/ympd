@@ -103,7 +103,7 @@ var app = $.sammy(function () {
 
             full_path = full_path + chunk;
             $('#breadcrump').append(
-                '<li><a uri="' + full_path + '">' + chunk + '</a></li>'
+                '<li><a uri="' + encodeURIComponent(full_path) + '">' + chunk + '</a></li>'
             );
             full_path += '/';
         });
@@ -441,9 +441,12 @@ function webSocketConnect() {
                     if (current_app !== 'browse' && current_app !== 'search')
                         break;
 
-                    /* The use of encodeURI() below might seem useless, but it's not. It prevents
+                    /* The use of encodeURIComponent() below might seem useless, but it's not. It prevents
                      * some browsers, such as Safari, from changing the normalization form of the
                      * URI from NFD to NFC, breaking our link with MPD.
+					 *
+					 * encodeURIComponent() instead of encodeURI() is used to ensure special characters
+					 * (like e.g. +) are handled correctly.
                      */
                     if ($('#salamisandwich > tbody').is(':ui-sortable')) {
                         $('#salamisandwich > tbody').sortable('destroy');
@@ -468,7 +471,7 @@ function webSocketConnect() {
                                 }
                                 $('#salamisandwich > tbody').append(
                                     '<tr uri="' +
-                                        encodeURI(obj.data[item].dir) +
+                                        encodeURIComponent(obj.data[item].dir) +
                                         '" class="' +
                                         clazz +
                                         '">' +
@@ -486,7 +489,7 @@ function webSocketConnect() {
                                 }
                                 $('#salamisandwich > tbody').append(
                                     '<tr uri="' +
-                                        encodeURI(obj.data[item].plist) +
+                                        encodeURIComponent(obj.data[item].plist) +
                                         '" class="' +
                                         clazz +
                                         '">' +
@@ -517,7 +520,7 @@ function webSocketConnect() {
 
                                 $('#salamisandwich > tbody').append(
                                     '<tr uri="' +
-                                        encodeURI(obj.data[item].uri) +
+                                        encodeURIComponent(obj.data[item].uri) +
                                         '" class="song">' +
                                         '<td><span class="glyphicon glyphicon-music"></span></td>' +
                                         '<td>' +
@@ -571,7 +574,7 @@ function webSocketConnect() {
                                 socket.send(
                                     onClickAction +
                                         ',' +
-                                        decodeURI(
+                                        decodeURIComponent(
                                             $(this).parents('tr').attr('uri')
                                         )
                                 );
@@ -664,7 +667,7 @@ function webSocketConnect() {
                                 case 'song':
                                     socket.send(
                                         'MPD_API_ADD_TRACK,' +
-                                            decodeURI($(this).attr('uri'))
+                                            decodeURIComponent($(this).attr('uri'))
                                     );
                                     $('.top-right')
                                         .notify({
@@ -683,7 +686,7 @@ function webSocketConnect() {
                                 case 'plist':
                                     socket.send(
                                         'MPD_API_ADD_PLAYLIST,' +
-                                            decodeURI($(this).attr('uri'))
+                                            decodeURIComponent($(this).attr('uri'))
                                     );
                                     $('.top-right')
                                         .notify({
