@@ -103,7 +103,11 @@ var app = $.sammy(function () {
 
             full_path = full_path + chunk;
             $('#breadcrump').append(
-                '<li><a uri="' + encodeURIComponent(full_path) + '">' + chunk + '</a></li>'
+                '<li><a uri="' +
+                    encodeURIComponent(full_path) +
+                    '">' +
+                    chunk +
+                    '</a></li>'
             );
             full_path += '/';
         });
@@ -444,9 +448,9 @@ function webSocketConnect() {
                     /* The use of encodeURIComponent() below might seem useless, but it's not. It prevents
                      * some browsers, such as Safari, from changing the normalization form of the
                      * URI from NFD to NFC, breaking our link with MPD.
-					 *
-					 * encodeURIComponent() instead of encodeURI() is used to ensure special characters
-					 * (like e.g. +) are handled correctly.
+                     *
+                     * encodeURIComponent() instead of encodeURI() is used to ensure special characters
+                     * (like e.g. +) are handled correctly.
                      */
                     if ($('#salamisandwich > tbody').is(':ui-sortable')) {
                         $('#salamisandwich > tbody').sortable('destroy');
@@ -489,7 +493,9 @@ function webSocketConnect() {
                                 }
                                 $('#salamisandwich > tbody').append(
                                     '<tr uri="' +
-                                        encodeURIComponent(obj.data[item].plist) +
+                                        encodeURIComponent(
+                                            obj.data[item].plist
+                                        ) +
                                         '" class="' +
                                         clazz +
                                         '">' +
@@ -667,7 +673,9 @@ function webSocketConnect() {
                                 case 'song':
                                     socket.send(
                                         'MPD_API_ADD_TRACK,' +
-                                            decodeURIComponent($(this).attr('uri'))
+                                            decodeURIComponent(
+                                                $(this).attr('uri')
+                                            )
                                     );
                                     $('.top-right')
                                         .notify({
@@ -686,7 +694,9 @@ function webSocketConnect() {
                                 case 'plist':
                                     socket.send(
                                         'MPD_API_ADD_PLAYLIST,' +
-                                            decodeURIComponent($(this).attr('uri'))
+                                            decodeURIComponent(
+                                                $(this).attr('uri')
+                                            )
                                     );
                                     $('.top-right')
                                         .notify({
