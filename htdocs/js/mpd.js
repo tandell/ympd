@@ -30,6 +30,7 @@ var MAX_ELEMENTS_PER_PAGE = 512;
 var isTouch = Modernizr.touch ? 1 : 0;
 var filter = '';
 var scrobbler = '';
+var wss_auth_token = '';
 
 var app = $.sammy(function () {
     function runBrowse() {
@@ -38,7 +39,8 @@ var app = $.sammy(function () {
         $('#breadcrump').addClass('hide');
         $('#filter').addClass('hide');
         $('#salamisandwich').removeClass('hide').find('tr:gt(0)').remove();
-        socket.send('MPD_API_GET_QUEUE,' + pagination);
+        if (wss_auth_token !== '')
+            socket.send('MPD_API_GET_QUEUE,' + pagination);
 
         $('#panel-heading').text('Queue');
         $('#panel-heading-info').empty();
@@ -249,6 +251,25 @@ $(document).ready(function () {
     );
 });
 
+function webSocketAuthenticate() {
+    var u = document.URL.split('#');
+    var separator;
+
+    if (/\/$/.test(u[0])) {
+        separator = '';
+    } else {
+        separator = '/';
+    }
+
+    $.ajax({
+        url: u[0] + separator + 'wss-auth',
+        success: function (data) {
+            wss_auth_token = data;
+            socket.send('MPD_API_AUTHORIZE,' + wss_auth_token);
+        },
+    });
+}
+
 function webSocketConnect() {
     if (typeof MozWebSocket != 'undefined') {
         socket = new MozWebSocket(get_appropriate_ws_url());
@@ -267,9 +288,8 @@ function webSocketConnect() {
                 .show();
 
             app.run();
-            /* emit initial request for output names */
-            socket.send('MPD_API_GET_OUTPUTS');
-            socket.send('MPD_API_GET_CHANNELS');
+
+            if (wss_auth_token === '') webSocketAuthenticate();
         };
 
         socket.onmessage = function got_packet(msg) {
@@ -904,6 +924,15 @@ function webSocketConnect() {
                         $('#mpd_password_set').removeClass('hide');
                     break;
 
+                case 'authorized':
+                    if (obj.data === 'true') {
+                        /* emit initial request for output names */
+                        socket.send('MPD_API_GET_OUTPUTS');
+                        socket.send('MPD_API_GET_CHANNELS');
+                    } else webSocketAuthenticate();
+
+                    break;
+
                 case 'error':
                     $('.top-right')
                         .notify({
@@ -918,6 +947,7 @@ function webSocketConnect() {
 
         socket.onclose = function () {
             console.log('disconnected');
+            wss_auth_token = '';
             $('.top-right')
                 .notify({
                     message: {

@@ -18,7 +18,10 @@
 
 #include "http_server.h"
 
+#include <openssl/rand.h>
 #include <string.h>
+
+#include "mpd_client.h"
 
 int callback_http(struct mg_connection *c) {
     const struct embedded_file *req_file;
@@ -31,6 +34,22 @@ int callback_http(struct mg_connection *c) {
     if (req_file) {
         mg_send_header(c, "Content-Type", req_file->mimetype);
         mg_send_data(c, req_file->data, req_file->size);
+
+        return MG_TRUE;
+    }
+
+    if (!strcmp(c->uri, "/wss-auth")) {
+        unsigned char salt[WSS_AUTH_TOKEN_SIZE + 1];
+
+        RAND_bytes(salt, WSS_AUTH_TOKEN_SIZE);
+        for (int i = 0; i <= WSS_AUTH_TOKEN_SIZE; i++) salt[i] = salt[i] % 26 + 65;
+        salt[WSS_AUTH_TOKEN_SIZE] = 0;
+        if (mpd.wss_auth_token)
+            free(mpd.wss_auth_token);
+        mpd.wss_auth_token = strdup((char *)salt);
+
+        mg_send_header(c, "Content-Type", "text/plain");
+        mg_send_data(c, salt, WSS_AUTH_TOKEN_SIZE);
 
         return MG_TRUE;
     }

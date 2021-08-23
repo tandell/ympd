@@ -34,6 +34,8 @@
 #define MAX_SIZE 1024 * 100
 #define MAX_ELEMENTS_PER_PAGE 512
 
+#define WSS_AUTH_TOKEN_SIZE 50
+
 #define GEN_ENUM(X) X,
 #define GEN_STR(X) #X,
 #define MPD_CMDS(X)             \
@@ -68,7 +70,8 @@
     X(MPD_API_TOGGLE_CONSUME)   \
     X(MPD_API_TOGGLE_SINGLE)    \
     X(MPD_API_TOGGLE_CROSSFADE) \
-    X(MPD_API_TOGGLE_REPEAT)
+    X(MPD_API_TOGGLE_REPEAT)    \
+    X(MPD_API_AUTHORIZE)
 
 enum mpd_cmd_ids { MPD_CMDS(GEN_ENUM) };
 
@@ -86,6 +89,7 @@ struct t_mpd {
     char host[128];
     char *password;
     char *gpass;
+    char *wss_auth_token;
 
     struct mpd_connection *conn;
     enum mpd_conn_states conn_state;
@@ -103,6 +107,8 @@ extern struct t_mpd mpd;
 struct t_mpd_client_session {
     int song_id;
     unsigned queue_version;
+    int authorized;
+    char *auth_token;
 };
 
 void mpd_poll(struct mg_server *s);

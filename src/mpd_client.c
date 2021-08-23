@@ -58,6 +58,18 @@ int callback_mpd(struct mg_connection *c) {
     int int_buf;
     char *p_charbuf = NULL, *token;
 
+    if (!c->connection_param)
+        c->connection_param = calloc(1, sizeof(struct t_mpd_client_session));
+
+    struct t_mpd_client_session *s = (struct t_mpd_client_session *)c->connection_param;
+
+    if (!s->authorized && (cmd_id != MPD_API_AUTHORIZE)) {
+        n = snprintf(mpd.buf, MAX_SIZE, "{\"type\":\"error\",\"data\":\"not authorized\"}");
+        mg_websocket_write(c, 1, mpd.buf, n);
+
+        return MG_TRUE;
+    }
+
     if (cmd_id == -1)
         return MG_TRUE;
 
@@ -66,6 +78,25 @@ int callback_mpd(struct mg_connection *c) {
         return MG_TRUE;
 
     switch (cmd_id) {
+        case MPD_API_AUTHORIZE:
+            p_charbuf = strdup(c->content);
+            if (strcmp(strtok(p_charbuf, ","), "MPD_API_AUTHORIZE"))
+                goto out_authorize;
+
+            if ((token = strtok(NULL, ",")) == NULL)
+                goto out_authorize;
+
+            free(p_charbuf);
+            p_charbuf = strdup(c->content);
+            s->auth_token = strdup(get_arg1(p_charbuf));
+            if (!strcmp(mpd.wss_auth_token, s->auth_token))
+                s->authorized = 1;
+
+            n = snprintf(mpd.buf, MAX_SIZE, "{\"type\":\"authorized\", \"data\":\"%s\"}",
+                         s->authorized ? "true" : "false");
+        out_authorize:
+            free(p_charbuf);
+            break;
         case MPD_API_UPDATE_DB:
             mpd_run_update(mpd.conn, NULL);
             break;
@@ -332,8 +363,13 @@ int callback_mpd(struct mg_connection *c) {
 
 int mpd_close_handler(struct mg_connection *c) {
     /* Cleanup session data */
-    if (c->connection_param)
+    if (c->connection_param) {
+        struct t_mpd_client_session *s = (struct t_mpd_client_session *)c->connection_param;
+        if (s->auth_token)
+            free(s->auth_token);
         free(c->connection_param);
+    }
+
     return 0;
 }
 
@@ -341,6 +377,14 @@ static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev) {
     size_t n;
 
     if (!c->is_websocket)
+        return MG_TRUE;
+
+    if (!c->connection_param)
+        return MG_TRUE;
+
+    struct t_mpd_client_session *s = (struct t_mpd_client_session *)c->connection_param;
+
+    if (!s->authorized)
         return MG_TRUE;
 
     if (c->callback_param) {
@@ -351,11 +395,6 @@ static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev) {
         mg_websocket_write(c, 1, mpd.buf, n);
         return MG_TRUE;
     }
-
-    if (!c->connection_param)
-        c->connection_param = calloc(1, sizeof(struct t_mpd_client_session));
-
-    struct t_mpd_client_session *s = (struct t_mpd_client_session *)c->connection_param;
 
     if (mpd.conn_state != MPD_CONNECTED) {
         n = snprintf(mpd.buf, MAX_SIZE, "{\"type\":\"disconnected\"}");
@@ -440,6 +479,11 @@ void mpd_poll(struct mg_server *s) {
                 mpd_notify_callback(c, MG_POLL);
             }
             mpd.buf_size = mpd_put_outputs(mpd.buf, 0);
+            for (struct mg_connection *c = mg_next(s, NULL); c != NULL; c = mg_next(s, c)) {
+                c->callback_param = NULL;
+                mpd_notify_callback(c, MG_POLL);
+            }
+            mpd.buf_size = mpd_put_channels(mpd.buf);
             for (struct mg_connection *c = mg_next(s, NULL); c != NULL; c = mg_next(s, c)) {
                 c->callback_param = NULL;
                 mpd_notify_callback(c, MG_POLL);
