@@ -52,6 +52,7 @@ static inline enum mpd_cmd_ids get_cmd_id(char *cmd) {
 }
 
 int callback_mpd(struct mg_connection *c) {
+    struct t_mpd_client_session *s;
     enum mpd_cmd_ids cmd_id = get_cmd_id(c->content);
     size_t n = 0;
     unsigned int uint_buf, uint_buf_2;
@@ -61,7 +62,7 @@ int callback_mpd(struct mg_connection *c) {
     if (!c->connection_param)
         c->connection_param = calloc(1, sizeof(struct t_mpd_client_session));
 
-    struct t_mpd_client_session *s = (struct t_mpd_client_session *)c->connection_param;
+    s = (struct t_mpd_client_session *)c->connection_param;
 
     if (!s->authorized && (cmd_id != MPD_API_AUTHORIZE)) {
         n = snprintf(mpd.buf, MAX_SIZE, "{\"type\":\"error\",\"data\":\"not authorized\"}");
@@ -362,9 +363,11 @@ int callback_mpd(struct mg_connection *c) {
 }
 
 int mpd_close_handler(struct mg_connection *c) {
+    struct t_mpd_client_session *s;
+
     /* Cleanup session data */
     if (c->connection_param) {
-        struct t_mpd_client_session *s = (struct t_mpd_client_session *)c->connection_param;
+        s = (struct t_mpd_client_session *)c->connection_param;
         if (s->auth_token)
             free(s->auth_token);
         free(c->connection_param);
@@ -374,6 +377,7 @@ int mpd_close_handler(struct mg_connection *c) {
 }
 
 static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev) {
+    struct t_mpd_client_session *s;
     size_t n;
 
     if (!c->is_websocket)
@@ -382,7 +386,7 @@ static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev) {
     if (!c->connection_param)
         return MG_TRUE;
 
-    struct t_mpd_client_session *s = (struct t_mpd_client_session *)c->connection_param;
+    s = (struct t_mpd_client_session *)c->connection_param;
 
     if (!s->authorized)
         return MG_TRUE;
@@ -400,7 +404,17 @@ static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev) {
         n = snprintf(mpd.buf, MAX_SIZE, "{\"type\":\"disconnected\"}");
         mg_websocket_write(c, 1, mpd.buf, n);
     } else {
-        mg_websocket_write(c, 1, mpd.buf, mpd.buf_size);
+        if (ev == MG_POLL) {
+            mpd.buf_size = mpd_put_state(mpd.buf, &mpd.song_id, &mpd.queue_version);
+            mg_websocket_write(c, 1, mpd.buf, mpd.buf_size);
+            mpd.buf_size = mpd_put_outputs(mpd.buf, 0);
+            mg_websocket_write(c, 1, mpd.buf, mpd.buf_size);
+            mpd.buf_size = mpd_put_channels(mpd.buf);
+            mg_websocket_write(c, 1, mpd.buf, mpd.buf_size);
+        } else {
+            fprintf(stdout, "notify_callback: %i, %s\n", mpd.buf_size, mpd.buf);
+            mg_websocket_write(c, 1, mpd.buf, mpd.buf_size);
+        }
 
         if (s->song_id != mpd.song_id) {
             n = mpd_put_current_song(mpd.buf);
@@ -473,21 +487,20 @@ void mpd_poll(struct mg_server *s) {
             break;
 
         case MPD_CONNECTED:
-            mpd.buf_size = mpd_put_state(mpd.buf, &mpd.song_id, &mpd.queue_version);
+            //            mpd.buf_size = mpd_put_state(mpd.buf, &mpd.song_id, &mpd.queue_version);
             for (struct mg_connection *c = mg_next(s, NULL); c != NULL; c = mg_next(s, c)) {
                 c->callback_param = NULL;
                 mpd_notify_callback(c, MG_POLL);
             }
-            mpd.buf_size = mpd_put_outputs(mpd.buf, 0);
-            for (struct mg_connection *c = mg_next(s, NULL); c != NULL; c = mg_next(s, c)) {
-                c->callback_param = NULL;
-                mpd_notify_callback(c, MG_POLL);
-            }
-            mpd.buf_size = mpd_put_channels(mpd.buf);
-            for (struct mg_connection *c = mg_next(s, NULL); c != NULL; c = mg_next(s, c)) {
-                c->callback_param = NULL;
-                mpd_notify_callback(c, MG_POLL);
-            }
+            /*            mpd.buf_size = mpd_put_outputs(mpd.buf, 0);
+                        for (struct mg_connection *c = mg_next(s, NULL); c != NULL; c = mg_next(s,
+               c)) { c->callback_param = NULL; mpd_notify_callback(c, MG_POLL);
+                        }
+                        mpd.buf_size = mpd_put_channels(mpd.buf);
+                        for (struct mg_connection *c = mg_next(s, NULL); c != NULL; c = mg_next(s,
+               c)) { c->callback_param = NULL; mpd_notify_callback(c, MG_POLL);
+                        }
+            */
             break;
     }
 }
