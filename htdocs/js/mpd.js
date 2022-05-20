@@ -113,6 +113,10 @@ var app = $.sammy(function () {
             );
             full_path += '/';
         });
+
+        // Remove the Queue Length Total
+        $('#panel-heading-info').empty();
+
         $('#browse').addClass('active');
     });
 
