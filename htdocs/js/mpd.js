@@ -115,6 +115,7 @@ var app = $.sammy(function () {
         });
 
         // Remove the Queue Length Total
+        // AJC TODO: Should we rename this to 'Current Queue Length: 1:1:23', etc?
         $('#panel-heading-info').empty();
 
         $('#browse').addClass('active');
@@ -1405,47 +1406,58 @@ function set_filter(c) {
     }
 }
 
+// Add the filter selector to the Browser
+// No parameters; however, it looks like it's using the `filter`, `pagination`,
+// and `browsepath` global variables
+// AJC TODO: Need to style the buttons with a custom class to style it.
+//           Part of the styling is to 'depress' the `active` selection.
 function add_filter() {
     $('#filter').empty();
+
+    // Set the location/target used in the window location
+    var loc = '#/browse/' + pagination + '/' + browsepath;
+
+    // Add the button for All/No Filter
     $('#filter').append(
-        '&nbsp;<a onclick="set_filter(\'\')" href="#/browse/' +
-            pagination +
-            '/' +
-            browsepath +
-            '">All</a>'
-    );
-    $('#filter').append(
-        '&nbsp;<a id="fnum" onclick="set_filter(\'num\')" href="#/browse/' +
-            pagination +
-            '/' +
-            browsepath +
-            '">#</a>'
+        "<button id='f' onclick=\"set_filter(''); window.location.href='" +
+            loc +
+            '\';" value="All">All</button>'
     );
 
+    // Add the button to indicate the number filter. (#)
+    $('#filter').append(
+        "<button  id='fnum' onclick=\"set_filter('num'); window.location.href='" +
+            loc +
+            '\';" value="#"> # </button>'
+    );
+
+    // Generate the buttons for the letters A-Z
+    // AJC TODO: Investigate if using ASCII codes is robust.
     for (i = 65; i <= 90; i++) {
         var c = String.fromCharCode(i);
         $('#filter').append(
-            '&nbsp;<a id="f' +
+            '<button id="f' +
                 c +
                 '" onclick="set_filter(\'' +
                 c +
-                '\');" href="#/browse/' +
-                pagination +
-                '/' +
-                browsepath +
+                "'); window.location.href='" +
+                loc +
+                '\';" value="' +
+                c +
                 '">' +
                 c +
-                '</a>'
+                '</button>'
         );
     }
 
+    // Display the Playlist selector button
     $('#filter').append(
-        '&nbsp;<a id="fplist" onclick="set_filter(\'plist\')" href="#/browse/' +
-            pagination +
-            '/' +
-            browsepath +
-            '" class="glyphicon glyphicon-list"></a>'
+        "<button id='fplist' class='glyphicon glyphicon-list' onclick=\"set_filter('plist'); window.location.href='" +
+            loc +
+            '\';">&nbsp;</button>'
     );
+
+    // Set the class of the 'picked' button as 'active'.
     $('#f' + filter).addClass('active');
     $('#filter').removeClass('hide');
 }
