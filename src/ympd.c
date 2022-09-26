@@ -28,6 +28,7 @@
 #include "http_server.h"
 #include "mongoose.h"
 #include "mpd_client.h"
+#include "tiny_logger.h"
 
 extern char *optarg;
 
@@ -183,6 +184,11 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
     }
+
+    logger_reset_state();
+    logger_set_log_level(LOG_MAX_LEVEL_ERROR_WARNING_STATUS_DEBUG);
+    // TODO Log to stdout. Add option to log to file/syslog
+    logger_set_out_stdout();
 
     while (!force_exit) {
         mg_poll_server(server, 200);

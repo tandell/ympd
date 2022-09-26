@@ -888,6 +888,9 @@ function webSocketConnect() {
                     break;
                 case 'song_change':
                     updatePageTitle(obj.data);
+                    // Should be able to find the uri in the obj.data at this point
+                    // _after_ the info is added to the response in mpd_client.c
+                    console.log(obj.data);
                     $('#album').text('');
                     $('#artist').text('');
 
