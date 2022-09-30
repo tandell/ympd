@@ -1070,6 +1070,14 @@ function updateDB() {
         .show();
 }
 
+function clickClearQueue() {
+    socket.send('MPD_API_RM_ALL');
+}
+
+function clickNextTrack() {
+    socket.send('MPD_API_SET_NEXT');
+}
+
 function clickPlay() {
     if ($('#track-icon').hasClass('glyphicon-stop'))
         socket.send('MPD_API_SET_PLAY');
@@ -1106,6 +1114,15 @@ function clickLocalPlay() {
     } else {
         player.pause();
     }
+}
+
+function clickPreviousTrack() {
+    socket.send('MPD_API_SET_PREV');
+}
+
+
+function clickStop() {
+    socket.send('MPD_API_SET_STOP');
 }
 
 function setLocalStream(mpdhost) {

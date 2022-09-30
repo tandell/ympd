@@ -33,6 +33,8 @@ For help with the rules, see [Clang Format Configurator](https://zed0.co.uk/clan
 
 ## Dependencies
 
+Remember to add the link in the 'settings' area of the index.html page.
+
 ### MPD
 
 **Music Player Daemon 0.23.5 (0.23.5)** -- Mainly for the album art functionality. Unknown what 

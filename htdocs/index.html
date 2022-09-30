@@ -68,14 +68,14 @@
               <button
                 type="button"
                 class="btn btn-default"
-                onclick="socket.send('MPD_API_SET_PREV');"
+                onclick="clickPreviousTrack();"
               >
                 <span class="glyphicon glyphicon-backward"></span>
               </button>
               <button
                 type="button"
                 class="btn btn-default"
-                onclick="socket.send('MPD_API_SET_STOP');"
+                onclick="clickStop();"
               >
                 <span id="stop-icon" class="glyphicon glyphicon-stop"></span>
               </button>
@@ -89,7 +89,7 @@
               <button
                 type="button"
                 class="btn btn-default"
-                onclick="socket.send('MPD_API_SET_NEXT');"
+                onclick="clickNextTrack();"
               >
                 <span class="glyphicon glyphicon-forward"></span>
               </button>
@@ -98,7 +98,7 @@
               <button
                 type="button"
                 class="btn btn-default"
-                onclick="clickLocalPlay()"
+                onclick="clickLocalPlay();"
               >
                 <audio id="player" preload="none"></audio>
                 <span
@@ -197,6 +197,7 @@
         </div>
         <!-- /.col-md-10 -->
 
+        <!-- Side Bar -->
         <div class="col-md-2 col-xs-12 sticky">
           <div class="btn-toolbar">
             <div
@@ -260,7 +261,7 @@
               <button
                 type="button"
                 class="btn btn-default"
-                onclick="socket.send('MPD_API_RM_ALL');"
+                onclick="clickClearQueue();"
               >
                 <span class="glyphicon glyphicon-trash"></span> Clear Queue
               </button>
@@ -275,13 +276,13 @@
             </div>
           </div>
         </div>
-        <!-- /.col-md-2 -->
+        <!-- End Side Bar -->
       </div>
       <!-- /.row -->
     </div>
     <!-- /.container -->
 
-    <!-- Modal -->
+    <!-- Settings Modal -->
     <div
       class="modal fade"
       id="settings"
@@ -439,9 +440,9 @@
       </div>
       <!-- /.modal-dialog -->
     </div>
-    <!-- /.modal -->
+    <!-- End Settings Modal -->
 
-    <!-- Modal -->
+    <!-- Stream Modal -->
     <div
       class="modal fade"
       id="addstream"
@@ -494,8 +495,9 @@
       </div>
       <!-- /.modal-dialog -->
     </div>
-    <!-- /.modal -->
+    <!-- End Stream Modal -->
 
+    <!-- Save Queue Modal -->
     <div
       class="modal fade"
       id="savequeue"
@@ -548,8 +550,10 @@
       </div>
       <!-- /.modal-dialog -->
     </div>
-    <!-- /.modal -->
+    <!-- End Save Queue Modal -->
 
+    <!-- Search Progress Modal -->
+    <!-- Used for showing a progress bar waiting on the server response -->
     <div
       class="modal fade bs-example-modal-sm"
       id="wait"
@@ -581,6 +585,7 @@
         </div>
       </div>
     </div>
+    <!-- End Search Progress Modal -->
 
     <!-- Bootstrap core JavaScript
   ================================================== -->
