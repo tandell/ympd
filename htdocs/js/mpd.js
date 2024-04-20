@@ -888,6 +888,14 @@ function webSocketConnect() {
                     break;
                 case 'song_change':
                     updatePageTitle(obj.data);
+
+                    // Should be able to find the uri in the obj.data at this point
+                    // _after_ the info is added to the response in mpd_client.c
+                    //
+                    // TODO:
+                    // - Need to verify the MPD version of the server before sending this.
+                    socket.send('MPD_API_SONG_ART,' + obj.data.uri);
+
                     $('#album').text('');
                     $('#artist').text('');
 
@@ -936,7 +944,14 @@ function webSocketConnect() {
                     } else webSocketAuthenticate();
 
                     break;
-
+                case 'album_art':
+                    // TODO:
+                    // - verify that the obj.data.artwork is valid base64 image
+                    // - have a default image to use if failure
+                    let songArt = 'data:image;base64,' + obj.data.artwork;
+                    $("#song-image").attr('src',songArt);
+                    
+                    break;
                 case 'error':
                     $('.top-right')
                         .notify({
@@ -1015,6 +1030,9 @@ var updateVolumeIcon = function (volume) {
     }
 };
 
+/**
+ * Update the 'Play Icon' on the page based on the state passed in.
+ */
 var updatePlayIcon = function (state) {
     $('#play-icon')
         .removeClass('glyphicon-play')
@@ -1067,10 +1085,24 @@ function updateDB() {
         .show();
 }
 
+function clickClearQueue() {
+    socket.send('MPD_API_RM_ALL');
+}
+
+function clickNextTrack() {
+    console.log("MPD_API_SET_NEXT");
+    socket.send('MPD_API_SET_NEXT');
+}
+
 function clickPlay() {
-    if ($('#track-icon').hasClass('glyphicon-stop'))
+    console.log("MPD_API_SET_PLAY/PAUSE");
+    if ($('#track-icon').hasClass('glyphicon-pause')) {
+        console.log("MPD_API_SET_PLAY");
         socket.send('MPD_API_SET_PLAY');
-    else socket.send('MPD_API_SET_PAUSE');
+    } else {
+        console.log("MPD_API_SET_PAUSE");
+        socket.send('MPD_API_SET_PAUSE');
+    }
 }
 
 function clickLocalPlay() {
@@ -1103,6 +1135,15 @@ function clickLocalPlay() {
     } else {
         player.pause();
     }
+}
+
+function clickPreviousTrack() {
+    socket.send('MPD_API_SET_PREV');
+}
+
+
+function clickStop() {
+    socket.send('MPD_API_SET_STOP');
 }
 
 function setLocalStream(mpdhost) {

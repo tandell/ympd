@@ -28,6 +28,8 @@
 
 #include "config.h"
 #include "json_encode.h"
+#include "tiny_logger.h"
+#include "base64.h"
 
 /* forward declaration */
 static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev);
@@ -44,13 +46,19 @@ char *get_arg2(char *p) {
 }
 
 static inline enum mpd_cmd_ids get_cmd_id(char *cmd) {
-    for (int i = 0; i < sizeof(mpd_cmd_strs) / sizeof(mpd_cmd_strs[0]); i++)
-        if (!strncmp(cmd, mpd_cmd_strs[i], strlen(mpd_cmd_strs[i])))
+    for (int i = 0; i < sizeof(mpd_cmd_strs) / sizeof(mpd_cmd_strs[0]); i++) {
+        if (!strncmp(cmd, mpd_cmd_strs[i], strlen(mpd_cmd_strs[i]))) {
+            log_debug("CMD_ID: %d: %s", i, cmd);
             return i;
+        }
+    }
 
     return -1;
 }
 
+/* callback_mpd is called when a request is recieved by the server.
+ *
+ */
 int callback_mpd(struct mg_connection *c) {
     enum mpd_cmd_ids cmd_id = get_cmd_id(c->content);
     size_t n = 0;
@@ -79,6 +87,7 @@ int callback_mpd(struct mg_connection *c) {
 
     switch (cmd_id) {
         case MPD_API_AUTHORIZE:
+            log_debug("MPD_API_AUTHORIZE");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_AUTHORIZE"))
                 goto out_authorize;
@@ -98,35 +107,46 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_UPDATE_DB:
+            log_debug("MPD_API_UPDATE_DB");
             mpd_run_update(mpd.conn, NULL);
             break;
         case MPD_API_SET_PAUSE:
+            log_debug("MPD_API_SET_PAUSE");
             mpd_run_toggle_pause(mpd.conn);
             break;
         case MPD_API_SET_PREV:
+            log_debug("MPD_API_SET_PREV");
             mpd_run_previous(mpd.conn);
             break;
         case MPD_API_SET_NEXT:
+            log_debug("MPD_API_SET_NEXT");
             mpd_run_next(mpd.conn);
             break;
         case MPD_API_SET_PLAY:
+            // When you click the play button itself
+            log_debug("MPD_API_SET_PLAY");
             mpd_run_play(mpd.conn);
             break;
         case MPD_API_SET_STOP:
+            log_debug("MPD_API_SET_STOP");
             mpd_run_stop(mpd.conn);
             break;
         case MPD_API_RM_ALL:
+            log_debug("MPD_API_RM_ALL");
             mpd_run_clear(mpd.conn);
             break;
         case MPD_API_RM_TRACK:
+            log_debug("MPD_API_RM_TRACK");
             if (sscanf(c->content, "MPD_API_RM_TRACK,%u", &uint_buf))
                 mpd_run_delete_id(mpd.conn, uint_buf);
             break;
         case MPD_API_RM_RANGE:
+            log_debug("MPD_API_RM_RANGE");
             if (sscanf(c->content, "MPD_API_RM_RANGE,%u,%u", &uint_buf, &uint_buf_2))
                 mpd_run_delete_range(mpd.conn, uint_buf, uint_buf_2);
             break;
         case MPD_API_MOVE_TRACK:
+            log_debug("MPD_API_MOVE_TRACK");
             if (sscanf(c->content, "MPD_API_MOVE_TRACK,%u,%u", &uint_buf, &uint_buf_2) == 2) {
                 uint_buf -= 1;
                 uint_buf_2 -= 1;
@@ -134,35 +154,44 @@ int callback_mpd(struct mg_connection *c) {
             }
             break;
         case MPD_API_PLAY_TRACK:
+            // When you click a track in the queue to play.
+            log_debug("MPD_API_PLAY_TRACK");
             if (sscanf(c->content, "MPD_API_PLAY_TRACK,%u", &uint_buf))
                 mpd_run_play_id(mpd.conn, uint_buf);
             break;
         case MPD_API_TOGGLE_RANDOM:
+            log_debug("MPD_API_TOGGLE_RANDOM");
             if (sscanf(c->content, "MPD_API_TOGGLE_RANDOM,%u", &uint_buf))
                 mpd_run_random(mpd.conn, uint_buf);
             break;
         case MPD_API_TOGGLE_REPEAT:
+            log_debug("MPD_API_TOGGLE_REPEAT");
             if (sscanf(c->content, "MPD_API_TOGGLE_REPEAT,%u", &uint_buf))
                 mpd_run_repeat(mpd.conn, uint_buf);
             break;
         case MPD_API_TOGGLE_CONSUME:
+            log_debug("MPD_API_TOGGLE_CONSUME");
             if (sscanf(c->content, "MPD_API_TOGGLE_CONSUME,%u", &uint_buf))
                 mpd_run_consume(mpd.conn, uint_buf);
             break;
         case MPD_API_TOGGLE_SINGLE:
+            log_debug("MPD_API_TOGGLE_SINGLE");
             if (sscanf(c->content, "MPD_API_TOGGLE_SINGLE,%u", &uint_buf))
                 mpd_run_single(mpd.conn, uint_buf);
             break;
         case MPD_API_TOGGLE_CROSSFADE:
+            log_debug("MPD_API_TOGGLE_CROSSFADE");
             if (sscanf(c->content, "MPD_API_TOGGLE_CROSSFADE,%u", &uint_buf))
                 mpd_run_crossfade(mpd.conn, uint_buf);
             break;
         case MPD_API_GET_OUTPUTS:
+            log_debug("MPD_API_GET_OUTPUTS");
             mpd.buf_size = mpd_put_outputs(mpd.buf, 1);
             c->callback_param = NULL;
             mpd_notify_callback(c, MG_POLL);
             break;
         case MPD_API_TOGGLE_OUTPUT:
+            log_debug("MPD_API_TOGGLE_OUTPUT");
             if (sscanf(c->content, "MPD_API_TOGGLE_OUTPUT,%u,%u", &uint_buf, &uint_buf_2)) {
                 if (uint_buf_2)
                     mpd_run_enable_output(mpd.conn, uint_buf);
@@ -171,18 +200,22 @@ int callback_mpd(struct mg_connection *c) {
             }
             break;
         case MPD_API_SET_VOLUME:
+            log_debug("MPD_API_SET_VOLUME");
             if (sscanf(c->content, "MPD_API_SET_VOLUME,%ud", &uint_buf) && uint_buf <= 100)
                 mpd_run_set_volume(mpd.conn, uint_buf);
             break;
         case MPD_API_SET_SEEK:
+            log_debug("MPD_API_SET_SEEK");
             if (sscanf(c->content, "MPD_API_SET_SEEK,%u,%u", &uint_buf, &uint_buf_2))
                 mpd_run_seek_id(mpd.conn, uint_buf, uint_buf_2);
             break;
         case MPD_API_GET_QUEUE:
+            log_debug("MPD_API_GET_QUEUE");
             if (sscanf(c->content, "MPD_API_GET_QUEUE,%u", &uint_buf))
                 n = mpd_put_queue(mpd.buf, uint_buf);
             break;
         case MPD_API_GET_BROWSE:
+            log_debug("MPD_API_GET_BROWSE");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_GET_BROWSE"))
                 goto out_browse;
@@ -198,6 +231,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_ADD_TRACK:
+            log_debug("MPD_API_ADD_TRACK");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_ADD_TRACK"))
                 goto out_add_track;
@@ -212,6 +246,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_ADD_PLAY_TRACK:
+            log_debug("MPD_API_ADD_PLAY_TRACK");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_ADD_PLAY_TRACK"))
                 goto out_play_track;
@@ -228,6 +263,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_ADD_PLAYLIST:
+            log_debug("MPD_API_ADD_PLAYLIST");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_ADD_PLAYLIST"))
                 goto out_playlist;
@@ -242,6 +278,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_SAVE_QUEUE:
+            log_debug("MPD_API_SAVE_QUEUE");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_SAVE_QUEUE"))
                 goto out_save_queue;
@@ -256,6 +293,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_SEARCH:
+            log_debug("MPD_API_SEARCH");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_SEARCH"))
                 goto out_search;
@@ -270,6 +308,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_SEND_MESSAGE:
+            log_debug("MPD_API_SEND_MESSAGE");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_SEND_MESSAGE"))
                 goto out_send_message;
@@ -291,13 +330,22 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_GET_CHANNELS:
+            log_debug("MPD_API_GET_CHANNELS");
             mpd.buf_size = mpd_put_channels(mpd.buf);
             c->callback_param = NULL;
             mpd_notify_callback(c, MG_POLL);
             break;
+        case MPD_API_SONG_ART:
+            log_debug("MPD_API_SONG_ART");
+            mpd.buf_size = mpd_put_album_art(mpd.buf);
+            c->callback_param = NULL;
+            mpd_notify_callback(c, MG_POLL);
+            break;
+
 #ifdef WITH_MPD_HOST_CHANGE
         /* Commands allowed when disconnected from MPD server */
         case MPD_API_SET_MPDHOST:
+            log_debug("MPD_API_SET_MPDHOST");
             int_buf = 0;
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_SET_MPDHOST"))
@@ -318,6 +366,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
         case MPD_API_GET_MPDHOST:
+            log_debug("MPD_API_GET_MPDHOST");
             n = snprintf(mpd.buf, MAX_SIZE,
                          "{\"type\":\"mpdhost\", \"data\": "
                          "{\"host\" : \"%s\", \"port\": \"%d\", \"passwort_set\": %s}"
@@ -325,6 +374,7 @@ int callback_mpd(struct mg_connection *c) {
                          mpd.host, mpd.port, mpd.password ? "true" : "false");
             break;
         case MPD_API_SET_MPDPASS:
+            log_debug("MPD_API_SET_MPDPASS");
             p_charbuf = strdup(c->content);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_SET_MPDPASS"))
                 goto out_set_pass;
@@ -348,7 +398,7 @@ int callback_mpd(struct mg_connection *c) {
     if (mpd.conn_state == MPD_CONNECTED &&
         mpd_connection_get_error(mpd.conn) != MPD_ERROR_SUCCESS) {
         n = snprintf(mpd.buf, MAX_SIZE, "{\"type\":\"error\", \"data\": \"%s\"}",
-                     mpd_connection_get_error_message(mpd.conn));
+            mpd_connection_get_error_message(mpd.conn));
 
         /* Try to recover error */
         if (!mpd_connection_clear_error(mpd.conn))
@@ -418,6 +468,9 @@ static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev) {
     return MG_TRUE;
 }
 
+/* Called to keep the connection between the server and client alive.
+ *
+ */
 void mpd_poll(struct mg_server *s) {
     switch (mpd.conn_state) {
         case MPD_DISCONNECTED:
@@ -625,6 +678,114 @@ int mpd_put_channels(char *buffer) {
     return str - buffer;
 }
 
+void buffer_artwork(void * concat_buffer, void * holding_buffer, int offset, int len) {
+    // TODO:
+    // - fragile at the moment
+    // - need to make sure image is greater than the holdingbuffer + offset+len.
+    // - Address build warning: dereferencing ‘void *’ pointer
+    memcpy(&concat_buffer[offset], holding_buffer, len);
+}
+
+char * mpd_get_album_art(const char *uri ) {
+    // Attempt song art
+    // Attempt album art
+    unsigned offset = 0;
+    void *image = malloc(1024*2048); // 2mb image
+    void *art_buffer = malloc(8192); // 8kb buffer to receive the image
+    int bytes_received = 0;
+
+    log_debug("Attempting art load of [%s]", uri);
+
+    while ((bytes_received = mpd_run_readpicture(mpd.conn, uri, offset, art_buffer, 8192)) > 0) {
+        log_debug("Received %d bytes from mpd readpicture command", bytes_received);
+        buffer_artwork(image, art_buffer, offset, bytes_received);
+        // Save bytes into a byte buffer.
+        log_debug("   Received %d bytes in total, so far", offset);
+        offset += (unsigned)bytes_received;
+    }
+
+    if( offset == 0 ) {
+        // Failure to retrieve the song art
+        log_debug("MPD failed for readpicture command for uri [%s]", uri);
+
+        mpd_connection_clear_error(mpd.conn);
+        mpd_response_finish(mpd.conn);
+    }
+
+    // Success reading individual song artwork
+    if( offset > 0 ) {
+        char *enc;
+        enc = b64_encode((const unsigned char *)image, offset);
+        free(image);
+        free(art_buffer);
+        return enc;
+    }
+    
+
+    // Reading the individual song artwork didn't work. Attempting now to read the album artwork
+
+    offset = 0;
+    bytes_received = 0;
+    while ((bytes_received = mpd_run_albumart(mpd.conn, uri, offset, art_buffer, 8192)) > 0) {
+        log_debug("Received %d bytes from mpd albumart command", bytes_received);
+        buffer_artwork(image, art_buffer, offset, bytes_received);
+        // Save bytes into a byte buffer.
+        log_debug("   Received %d bytes in total, so far", offset);
+        offset += (unsigned)bytes_received;
+    }
+
+    if( offset == 0 ) {
+        // Failure to retrieve the song art
+        log_debug("MPD failed readpicture albumart for uri [%s]", uri);
+
+        mpd_connection_clear_error(mpd.conn);
+        mpd_response_finish(mpd.conn);
+    }
+
+    // Success reading individual song artwork
+    if( offset > 0 ) {
+        char *enc;
+        enc = b64_encode((const unsigned char *)image, offset);
+        free(image);
+        free(art_buffer);
+        return enc;
+    }
+
+    // TODO: Need to serve a 'default image' in case there isn't any artwork.
+    free(image);
+    free(art_buffer);
+    return "";
+}
+
+int mpd_put_album_art(char *buffer) {
+    char *cur = buffer;
+    const char *end = buffer + MAX_SIZE;
+    struct mpd_song *song;
+
+    song = mpd_run_current_song(mpd.conn);
+    if (song == NULL)
+        return 0;
+
+    char * uri = mpd_song_get_uri(song);
+    char * artwork = mpd_get_album_art(uri);
+
+    log_debug("Current Song URI: %s", uri);
+    log_debug("    Artwork Size: %d", strlen(artwork));
+
+    // TODO this is the response structure for the current playing song
+    cur += json_emit_raw_str(cur, end - cur, "{\"type\": \"album_art\", \"data\":{\"artwork\":");
+    cur += json_emit_quoted_str(cur, end - cur, artwork);
+    cur += json_emit_raw_str(cur, end - cur, "}}");
+
+    if( strlen(artwork) >= 0 ) {
+        free(artwork);
+    }
+    mpd_song_free(song);
+    mpd_response_finish(mpd.conn);
+
+    return cur - buffer;
+}
+
 int mpd_put_current_song(char *buffer) {
     char *cur = buffer;
     const char *end = buffer + MAX_SIZE;
@@ -634,6 +795,9 @@ int mpd_put_current_song(char *buffer) {
     if (song == NULL)
         return 0;
 
+    char * uri = mpd_song_get_uri(song);
+
+    // TODO this is the response structure for the current playing song
     cur += json_emit_raw_str(cur, end - cur, "{\"type\": \"song_change\", \"data\":{\"pos\":");
     cur += json_emit_int(cur, end - cur, mpd_song_get_pos(song));
     cur += json_emit_raw_str(cur, end - cur, ",\"title\":");
@@ -642,8 +806,10 @@ int mpd_put_current_song(char *buffer) {
     cur += json_emit_quoted_str(cur, end - cur, mpd_get_artist(song));
     cur += json_emit_raw_str(cur, end - cur, ",\"album\":");
     cur += json_emit_quoted_str(cur, end - cur, mpd_get_album(song));
-
+    cur += json_emit_raw_str(cur, end - cur, ",\"uri\":");
+    cur += json_emit_quoted_str(cur, end - cur, uri);
     cur += json_emit_raw_str(cur, end - cur, "}}");
+
     mpd_song_free(song);
     mpd_response_finish(mpd.conn);
 

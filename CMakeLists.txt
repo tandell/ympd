@@ -44,6 +44,7 @@ file(GLOB RESOURCES
     htdocs/fonts/*
     htdocs/index.html
     htdocs/player.html
+#    htdocs/touch-pi.html
 )
 
 set(SOURCES
@@ -51,6 +52,8 @@ set(SOURCES
     src/mpd_client.c
     src/mongoose.c
     src/json_encode.c
+    src/tiny_logger.c
+    src/base64.c
 )
 
 if(NOT WITH_DYNAMIC_ASSETS)

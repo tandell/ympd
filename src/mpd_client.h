@@ -18,7 +18,8 @@
 
 #ifndef __MPD_CLIENT_H__
 #define __MPD_CLIENT_H__
-
+#include <mpd/client.h>
+#include <mpd/message.h>
 #include "mongoose.h"
 
 #define RETURN_ERROR_AND_RECOVER(X)                                                 \
@@ -31,7 +32,7 @@
         return cur - buffer;                                                        \
     } while (0)
 
-#define MAX_SIZE 1024 * 100
+#define MAX_SIZE 1024 * 1024 * 6
 #define MAX_ELEMENTS_PER_PAGE 512
 
 #define WSS_AUTH_TOKEN_SIZE 50
@@ -71,7 +72,8 @@
     X(MPD_API_TOGGLE_SINGLE)    \
     X(MPD_API_TOGGLE_CROSSFADE) \
     X(MPD_API_TOGGLE_REPEAT)    \
-    X(MPD_API_AUTHORIZE)
+    X(MPD_API_AUTHORIZE)        \
+    X(MPD_API_SONG_ART)
 
 enum mpd_cmd_ids { MPD_CMDS(GEN_ENUM) };
 
@@ -114,6 +116,7 @@ struct t_mpd_client_session {
 void mpd_poll(struct mg_server *s);
 int callback_mpd(struct mg_connection *c);
 int mpd_close_handler(struct mg_connection *c);
+char * mpd_get_title(struct mpd_song const *song);
 int mpd_put_state(char *buffer, int *current_song_id, unsigned *queue_version);
 int mpd_put_outputs(char *buffer, int putnames);
 int mpd_put_channels(char *buffer);
@@ -122,4 +125,6 @@ int mpd_put_queue(char *buffer, unsigned int offset);
 int mpd_put_browse(char *buffer, char *path, unsigned int offset);
 int mpd_search(char *buffer, char *searchstr);
 void mpd_disconnect();
+
+int mpd_put_album_art(char *buffer);
 #endif
