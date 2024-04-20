@@ -129,40 +129,52 @@
       </div>
     </div>
 
+    <!-- Main Section -->
     <div class="container starter-template">
       <div class="row">
         <div class="col-md-10 col-xs-12">
           <div class="notifications top-right"></div>
 
+          <!-- Default panel contents -->
           <div class="panel panel-primary sticky">
-            <!-- Default panel contents -->
-            <div class="panel-body">
-              <h1>
-                <span
-                  id="track-icon"
-                  onclick="clickPlay();"
-                  class="glyphicon glyphicon-play"
-                ></span>
-                <span id="currenttrack"></span>
-                <span id="love">
-                  <button
-                    id="btnlove"
-                    type="button"
-                    class="btn btn-default"
-                    onclick="clickLove();"
-                  >
-                    <span class="glyphicon glyphicon-heart"></span></button
-                ></span>
-              </h1>
-              <h4>
-                <span id="artist" class="text"></span>
-                <span id="album" class="text pull-right"></span>
-              </h4>
-              <p id="counter" class="text pull-right">&nbsp;&nbsp;</p>
-
-              <div id="progressbar"></div>
+            <div class="row row-list">
+            <!-- Now Playing Panel -->
+              <div class="col-xs-3 container-paragraph">
+                <!-- Render the Album / Song Artwork at this position -->
+                <div class="panel-body">
+                  <img id="song-image" src="assets/500x500.png" style='height: auto; width: 100%; object-fit: contain'/>
+                </div>
+              </div>
+              <div class="col-xs-9 container-paragraph">
+                <div class="panel-body">
+                  <h1>
+                    <span
+                      id="track-icon"
+                      onclick="clickPlay();"
+                      class="glyphicon glyphicon-play"
+                    ></span>
+                    <span id="currenttrack"></span>
+                    <span id="love">
+                      <button
+                        id="btnlove"
+                        type="button"
+                        class="btn btn-default"
+                        onclick="clickLove();"
+                      >
+                        <span class="glyphicon glyphicon-heart"></span></button
+                    ></span>
+                  </h1>
+                  <h4>
+                    <span id="artist" class="text"></span>
+                    <span id="album" class="text pull-right"></span>
+                  </h4>
+                  <p id="counter" class="text pull-right">&nbsp;&nbsp;</p>
+                  <div id="progressbar"></div>
+                </div>
+              </div>
             </div>
           </div>
+          <!-- End Now Playing Panel -->
           <!-- /.panel -->
           <!-- /.panel-body -->
           <div class="panel panel-primary">
@@ -280,7 +292,7 @@
       </div>
       <!-- /.row -->
     </div>
-    <!-- /.container -->
+    <!-- End Main Section -->
 
     <!-- Settings Modal -->
     <div

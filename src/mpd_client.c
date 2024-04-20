@@ -29,6 +29,7 @@
 #include "config.h"
 #include "json_encode.h"
 #include "tiny_logger.h"
+#include "base64.h"
 
 /* forward declaration */
 static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev);
@@ -45,13 +46,19 @@ char *get_arg2(char *p) {
 }
 
 static inline enum mpd_cmd_ids get_cmd_id(char *cmd) {
-    for (int i = 0; i < sizeof(mpd_cmd_strs) / sizeof(mpd_cmd_strs[0]); i++)
-        if (!strncmp(cmd, mpd_cmd_strs[i], strlen(mpd_cmd_strs[i])))
+    for (int i = 0; i < sizeof(mpd_cmd_strs) / sizeof(mpd_cmd_strs[0]); i++) {
+        if (!strncmp(cmd, mpd_cmd_strs[i], strlen(mpd_cmd_strs[i]))) {
+            log_debug("CMD_ID: %d: %s", i, cmd);
             return i;
+        }
+    }
 
     return -1;
 }
 
+/* callback_mpd is called when a request is recieved by the server.
+ *
+ */
 int callback_mpd(struct mg_connection *c) {
     enum mpd_cmd_ids cmd_id = get_cmd_id(c->content);
     size_t n = 0;
@@ -328,6 +335,13 @@ int callback_mpd(struct mg_connection *c) {
             c->callback_param = NULL;
             mpd_notify_callback(c, MG_POLL);
             break;
+        case MPD_API_SONG_ART:
+            log_debug("MPD_API_SONG_ART");
+            mpd.buf_size = mpd_put_album_art(mpd.buf);
+            c->callback_param = NULL;
+            mpd_notify_callback(c, MG_POLL);
+            break;
+
 #ifdef WITH_MPD_HOST_CHANGE
         /* Commands allowed when disconnected from MPD server */
         case MPD_API_SET_MPDHOST:
@@ -379,20 +393,12 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             break;
 #endif
-        case MPD_API_ALBUM_ART:
-            // get the cover.* image from the currently playing song directory
-            log_debug("MPD_API_ALBUM_ART");
-            break;
-        case MPD_API_READ_PICTURE:
-            // get the embedded image from the currently playing song
-            log_debug("MPD_API_READ_PICTURE");
-            break;
     }
 
     if (mpd.conn_state == MPD_CONNECTED &&
         mpd_connection_get_error(mpd.conn) != MPD_ERROR_SUCCESS) {
         n = snprintf(mpd.buf, MAX_SIZE, "{\"type\":\"error\", \"data\": \"%s\"}",
-                     mpd_connection_get_error_message(mpd.conn));
+            mpd_connection_get_error_message(mpd.conn));
 
         /* Try to recover error */
         if (!mpd_connection_clear_error(mpd.conn))
@@ -462,6 +468,9 @@ static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev) {
     return MG_TRUE;
 }
 
+/* Called to keep the connection between the server and client alive.
+ *
+ */
 void mpd_poll(struct mg_server *s) {
     switch (mpd.conn_state) {
         case MPD_DISCONNECTED:
@@ -669,6 +678,114 @@ int mpd_put_channels(char *buffer) {
     return str - buffer;
 }
 
+void buffer_artwork(void * concat_buffer, void * holding_buffer, int offset, int len) {
+    // TODO:
+    // - fragile at the moment
+    // - need to make sure image is greater than the holdingbuffer + offset+len.
+    // - Address build warning: dereferencing ‘void *’ pointer
+    memcpy(&concat_buffer[offset], holding_buffer, len);
+}
+
+char * mpd_get_album_art(const char *uri ) {
+    // Attempt song art
+    // Attempt album art
+    unsigned offset = 0;
+    void *image = malloc(1024*2048); // 2mb image
+    void *art_buffer = malloc(8192); // 8kb buffer to receive the image
+    int bytes_received = 0;
+
+    log_debug("Attempting art load of [%s]", uri);
+
+    while ((bytes_received = mpd_run_readpicture(mpd.conn, uri, offset, art_buffer, 8192)) > 0) {
+        log_debug("Received %d bytes from mpd readpicture command", bytes_received);
+        buffer_artwork(image, art_buffer, offset, bytes_received);
+        // Save bytes into a byte buffer.
+        log_debug("   Received %d bytes in total, so far", offset);
+        offset += (unsigned)bytes_received;
+    }
+
+    if( offset == 0 ) {
+        // Failure to retrieve the song art
+        log_debug("MPD failed for readpicture command for uri [%s]", uri);
+
+        mpd_connection_clear_error(mpd.conn);
+        mpd_response_finish(mpd.conn);
+    }
+
+    // Success reading individual song artwork
+    if( offset > 0 ) {
+        char *enc;
+        enc = b64_encode((const unsigned char *)image, offset);
+        free(image);
+        free(art_buffer);
+        return enc;
+    }
+    
+
+    // Reading the individual song artwork didn't work. Attempting now to read the album artwork
+
+    offset = 0;
+    bytes_received = 0;
+    while ((bytes_received = mpd_run_albumart(mpd.conn, uri, offset, art_buffer, 8192)) > 0) {
+        log_debug("Received %d bytes from mpd albumart command", bytes_received);
+        buffer_artwork(image, art_buffer, offset, bytes_received);
+        // Save bytes into a byte buffer.
+        log_debug("   Received %d bytes in total, so far", offset);
+        offset += (unsigned)bytes_received;
+    }
+
+    if( offset == 0 ) {
+        // Failure to retrieve the song art
+        log_debug("MPD failed readpicture albumart for uri [%s]", uri);
+
+        mpd_connection_clear_error(mpd.conn);
+        mpd_response_finish(mpd.conn);
+    }
+
+    // Success reading individual song artwork
+    if( offset > 0 ) {
+        char *enc;
+        enc = b64_encode((const unsigned char *)image, offset);
+        free(image);
+        free(art_buffer);
+        return enc;
+    }
+
+    // TODO: Need to serve a 'default image' in case there isn't any artwork.
+    free(image);
+    free(art_buffer);
+    return "";
+}
+
+int mpd_put_album_art(char *buffer) {
+    char *cur = buffer;
+    const char *end = buffer + MAX_SIZE;
+    struct mpd_song *song;
+
+    song = mpd_run_current_song(mpd.conn);
+    if (song == NULL)
+        return 0;
+
+    char * uri = mpd_song_get_uri(song);
+    char * artwork = mpd_get_album_art(uri);
+
+    log_debug("Current Song URI: %s", uri);
+    log_debug("    Artwork Size: %d", strlen(artwork));
+
+    // TODO this is the response structure for the current playing song
+    cur += json_emit_raw_str(cur, end - cur, "{\"type\": \"album_art\", \"data\":{\"artwork\":");
+    cur += json_emit_quoted_str(cur, end - cur, artwork);
+    cur += json_emit_raw_str(cur, end - cur, "}}");
+
+    if( strlen(artwork) >= 0 ) {
+        free(artwork);
+    }
+    mpd_song_free(song);
+    mpd_response_finish(mpd.conn);
+
+    return cur - buffer;
+}
+
 int mpd_put_current_song(char *buffer) {
     char *cur = buffer;
     const char *end = buffer + MAX_SIZE;
@@ -677,6 +794,8 @@ int mpd_put_current_song(char *buffer) {
     song = mpd_run_current_song(mpd.conn);
     if (song == NULL)
         return 0;
+
+    char * uri = mpd_song_get_uri(song);
 
     // TODO this is the response structure for the current playing song
     cur += json_emit_raw_str(cur, end - cur, "{\"type\": \"song_change\", \"data\":{\"pos\":");
@@ -688,9 +807,9 @@ int mpd_put_current_song(char *buffer) {
     cur += json_emit_raw_str(cur, end - cur, ",\"album\":");
     cur += json_emit_quoted_str(cur, end - cur, mpd_get_album(song));
     cur += json_emit_raw_str(cur, end - cur, ",\"uri\":");
-    cur += json_emit_quoted_str(cur, end - cur, mpd_song_get_uri(song));
-
+    cur += json_emit_quoted_str(cur, end - cur, uri);
     cur += json_emit_raw_str(cur, end - cur, "}}");
+
     mpd_song_free(song);
     mpd_response_finish(mpd.conn);
 
