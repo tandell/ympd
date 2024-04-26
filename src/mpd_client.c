@@ -217,6 +217,7 @@ int callback_mpd(struct mg_connection *c) {
         case MPD_API_GET_BROWSE:
             log_debug("MPD_API_GET_BROWSE");
             p_charbuf = strdup(c->content);
+            //log_debug("    %s", p_charbuf);
             if (strcmp(strtok(p_charbuf, ","), "MPD_API_GET_BROWSE"))
                 goto out_browse;
 
@@ -227,6 +228,7 @@ int callback_mpd(struct mg_connection *c) {
             free(p_charbuf);
             p_charbuf = strdup(c->content);
             n = mpd_put_browse(mpd.buf, get_arg2(p_charbuf), uint_buf);
+            //log_debug("%s", mpd.buf);
         out_browse:
             free(p_charbuf);
             break;
@@ -686,6 +688,11 @@ void buffer_artwork(void * concat_buffer, void * holding_buffer, int offset, int
     memcpy(&concat_buffer[offset], holding_buffer, len);
 }
 
+/*
+ * Retrieve the artwork for the provided file. 
+ * 
+ * The embedded artwork will be first attempted, then the album art.
+ */
 char * mpd_get_album_art(const char *uri ) {
     // Attempt song art
     // Attempt album art
@@ -757,6 +764,9 @@ char * mpd_get_album_art(const char *uri ) {
     return "";
 }
 
+/*
+ * Put the current song's artwork onto the buffer in base64 form.
+ */
 int mpd_put_album_art(char *buffer) {
     char *cur = buffer;
     const char *end = buffer + MAX_SIZE;
@@ -772,14 +782,14 @@ int mpd_put_album_art(char *buffer) {
     log_debug("Current Song URI: %s", uri);
     log_debug("    Artwork Size: %d", strlen(artwork));
 
-    // TODO this is the response structure for the current playing song
-    cur += json_emit_raw_str(cur, end - cur, "{\"type\": \"album_art\", \"data\":{\"artwork\":");
-    cur += json_emit_quoted_str(cur, end - cur, artwork);
-    cur += json_emit_raw_str(cur, end - cur, "}}");
+    if( strlen(artwork) > 0 ) {
+        cur += json_emit_raw_str(cur, end - cur, "{\"type\": \"album_art\", \"data\":{\"artwork\":");
+        cur += json_emit_quoted_str(cur, end - cur, artwork);
+        cur += json_emit_raw_str(cur, end - cur, "}}");
 
-    if( strlen(artwork) >= 0 ) {
         free(artwork);
     }
+
     mpd_song_free(song);
     mpd_response_finish(mpd.conn);
 
@@ -868,11 +878,13 @@ int mpd_put_queue(char *buffer, unsigned int offset) {
 }
 
 int mpd_put_browse(char *buffer, char *path, unsigned int offset) {
+    log_debug("Calling 'mpd_put_browse' with path: [%s]:[%d]", path, offset);
     char *cur = buffer;
     const char *end = buffer + MAX_SIZE;
     struct mpd_entity *entity;
     unsigned int entity_count = 0;
 
+    unsigned int skip_count = 0;
     if (!mpd_send_list_meta(mpd.conn, path))
         RETURN_ERROR_AND_RECOVER("mpd_send_list_meta");
 
@@ -884,14 +896,20 @@ int mpd_put_browse(char *buffer, char *path, unsigned int offset) {
         const struct mpd_playlist *pl;
 
         if (offset > entity_count) {
+            // We're skipping 'n' entities until 'offset' have been processed. (e.g. skip=10)
             mpd_entity_free(entity);
             entity_count++;
+            skip_count++;
             continue;
         } else if (offset + MAX_ELEMENTS_PER_PAGE - 1 < entity_count) {
+            // We've reached the max number of elements to retrieve. e.g. skip=10, size=10 should 
+            // get you elements 11-20. But there are more elements to retrieve.
             mpd_entity_free(entity);
             cur += json_emit_raw_str(cur, end - cur, "{\"type\":\"wrap\",\"count\":");
             cur += json_emit_int(cur, end - cur, entity_count);
             cur += json_emit_raw_str(cur, end - cur, "} ");
+            log_debug("Total entities processed: [%d]", entity_count);
+            log_debug("Total entities skipped: [%d]", skip_count);
             break;
         }
 
@@ -933,6 +951,9 @@ int mpd_put_browse(char *buffer, char *path, unsigned int offset) {
         entity_count++;
     }
 
+    // At this point, we've either run out of entities to process or read in the maximum amount of
+    // entities to process.
+
     if (mpd_connection_get_error(mpd.conn) != MPD_ERROR_SUCCESS || !mpd_response_finish(mpd.conn)) {
         fprintf(stderr, "MPD mpd_send_list_meta: %s\n", mpd_connection_get_error_message(mpd.conn));
         mpd.conn_state = MPD_FAILURE;
@@ -943,6 +964,7 @@ int mpd_put_browse(char *buffer, char *path, unsigned int offset) {
     cur--;
 
     cur += json_emit_raw_str(cur, end - cur, "]}");
+    log_debug("Entities Seen: [%d]", entity_count);
     return cur - buffer;
 }
 
