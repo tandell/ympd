@@ -10,7 +10,7 @@ http://www.ympd.org
 
 ## Dependencies
 
--   libmpdclient 2: http://www.musicpd.org/libs/libmpdclient/
+-   libmpdclient 2 (minimum version 2.20): http://www.musicpd.org/libs/libmpdclient/
 -   cmake 2.6: http://cmake.org/
 -   OpenSSL: https://www.openssl.org/
 

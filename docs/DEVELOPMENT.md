@@ -40,10 +40,16 @@ Remember to add the link in the 'settings' area of the index.html page.
 **Music Player Daemon 0.23.5 (0.23.5)** -- Mainly for the album art functionality. Unknown what 
 the minimum version supports at the moment.
 
+### libmpdclient
+
+libmpdclient version 2.20 is required for album art support.
+
 ### tiny_logger
 
 Tiny Logger was retrieved from https://github.com/olegkutkov/tiny_logger on Sept 2022. It's licensed GPLv2.
 Usage: https://olegkutkov.me/2019/03/25/simple-logger-with-stdout-files-and-syslog-support-for-c-projects-in-linux/
+
+There _is_ a limit to how much you can send in a single log message. It'll coredump if exceeded. Which is.... useful.
 
 #### TODO
 
@@ -74,6 +80,10 @@ Usage:
   void log_status(char* format, ...) - write formatted status message
   void log_debug(char* format, ...) - write formatted debug message
 ```
+
+### `base64.c`
+
+Pulled from `https://nachtimwald.com/2017/11/18/base64-encode-and-decode-in-c/`
 
 ## Development Recommendations
 
