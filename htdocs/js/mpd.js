@@ -255,18 +255,23 @@ $(document).ready(function () {
     );
 });
 
+/**
+ * Make the request to retrieve the web socket authorization. 
+ */
 function webSocketAuthenticate() {
-    var u = document.URL.split('#');
-    var separator;
-
-    if (/\/$/.test(u[0])) {
-        separator = '';
-    } else {
-        separator = '/';
+    let currentUrl;
+    let loc = document.location;
+    if( loc ) {
+        // This strips off the hash, query, and the last element from the path.
+        currentUrl = loc.protocol + "//" + loc.host 
+            + loc.pathname.substring(0, loc.pathname.lastIndexOf("/")) + "/";
     }
 
+    // TODO potential undefined behavior
+    // While in theory, currentUrl will always be valid there's a small chance on initial page load
+    // that it won't. Not sure what would happen in that case.    
     $.ajax({
-        url: u[0] + separator + 'wss-auth',
+        url: currentUrl + 'wss-auth',
         success: function (data) {
             wss_auth_token = data;
             socket.send('MPD_API_AUTHORIZE,' + wss_auth_token);

@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "mpd_client.h"
+#include "tiny_logger.h"
 
 int callback_http(struct mg_connection *c) {
     const struct embedded_file *req_file;
